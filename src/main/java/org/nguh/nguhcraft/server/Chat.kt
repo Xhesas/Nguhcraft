@@ -32,6 +32,7 @@ object Chat {
 
     /** Components used in sender names. */
     val SERVER_COMPONENT: Text = Utils.BracketedLiteralComponent("Server")
+    val RCON_COMPONENT: Text = Utils.BracketedLiteralComponent("RCon")
     private val SRV_LIT_COMPONENT: Text = Text.literal("Server").withColor(Constants.Lavender)
     private val COLON_COMPONENT: Text = Text.literal(":")
     private val COMMA_COMPONENT = Text.literal(", ").withColor(Constants.DeepKoamaru)
@@ -130,6 +131,16 @@ object Chat {
             WorldKey,
             Pos.toShortString(),
             S
+        )
+    }
+
+    /** Log RCon command execution. */
+    @JvmStatic
+    fun LogRConCommand(S: MinecraftServer, Command: String) {
+        BroadcastCommand(S, Text.literal("Remote console"), Command)
+        LOGGER.info(
+            "[RCon] Remote console issued command /{}",
+            if (Command.startsWith('/')) Command.substring(1) else Command
         )
     }
 
