@@ -956,7 +956,6 @@ object NguhBlocks {
         RegisterFlammable(TINTED_OAK_WOOD, 5, 5)
         RegisterFlammable(STRIPPED_TINTED_OAK_LOG, 5, 5)
         RegisterFlammable(STRIPPED_TINTED_OAK_WOOD, 5, 5)
-        for (V in NguhBlockModels.VERTICAL_SLABS) { if (V.Wood) { RegisterFlammable(V.VerticalSlab, 5, 5) } }
     }
 
     @Suppress("DEPRECATION")
