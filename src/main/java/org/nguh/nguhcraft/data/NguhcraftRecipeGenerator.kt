@@ -2,24 +2,24 @@ package org.nguh.nguhcraft.data
 
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
-import net.minecraft.block.Block
-import net.minecraft.block.Blocks
-import net.minecraft.data.family.BlockFamilies
-import net.minecraft.data.family.BlockFamily
-import net.minecraft.data.recipe.ComplexRecipeJsonBuilder
-import net.minecraft.data.recipe.RecipeExporter
-import net.minecraft.data.recipe.RecipeGenerator
-import net.minecraft.data.recipe.ShapedRecipeJsonBuilder
-import net.minecraft.item.Item
-import net.minecraft.item.ItemConvertible
-import net.minecraft.item.Items
-import net.minecraft.recipe.book.RecipeCategory
-import net.minecraft.registry.Registries
-import net.minecraft.registry.RegistryKey
-import net.minecraft.registry.RegistryKeys
-import net.minecraft.registry.RegistryWrapper
-import net.minecraft.registry.tag.ItemTags
-import net.minecraft.registry.tag.TagKey
+import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.Blocks
+import net.minecraft.data.BlockFamilies
+import net.minecraft.data.BlockFamily
+import net.minecraft.data.recipes.SpecialRecipeBuilder
+import net.minecraft.data.recipes.RecipeOutput
+import net.minecraft.data.recipes.RecipeProvider
+import net.minecraft.data.recipes.ShapedRecipeBuilder
+import net.minecraft.world.item.Item
+import net.minecraft.world.level.ItemLike
+import net.minecraft.world.item.Items
+import net.minecraft.data.recipes.RecipeCategory
+import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.resources.ResourceKey
+import net.minecraft.core.registries.Registries
+import net.minecraft.core.HolderLookup
+import net.minecraft.tags.ItemTags
+import net.minecraft.tags.TagKey
 import org.nguh.nguhcraft.Nguhcraft.Companion.Id
 import org.nguh.nguhcraft.block.*
 import org.nguh.nguhcraft.item.KeyDuplicationRecipe
@@ -29,32 +29,32 @@ import kotlin.collections.iterator
 
 @Environment(EnvType.CLIENT)
 class NguhcraftRecipeGenerator(
-    val WL: RegistryWrapper.WrapperLookup,
-    val E: RecipeExporter
-) : RecipeGenerator(WL, E) {
-    val Lookup = WL.getOrThrow(RegistryKeys.ITEM)
+    val WL: HolderLookup.Provider,
+    val E: RecipeOutput
+) : RecipeProvider(WL, E) {
+    val Lookup = WL.lookupOrThrow(Registries.ITEM)
     val BlockFamily.IsWood get() = this in NguhBlocks.WOOD_VARIANT_FAMILIES
 
-    override fun generate() {
+    override fun buildRecipes() {
         // =========================================================================
         //  Armour Trims
         // =========================================================================
-        NguhItems.ALL_NGUHCRAFT_ARMOUR_TRIMS.forEach { offerSmithingTrimRecipe(
+        NguhItems.ALL_NGUHCRAFT_ARMOUR_TRIMS.forEach { trimSmithing(
             it.Template,
             it.Trim,
-            RegistryKey.of(RegistryKeys.RECIPE, Id("${getItemPath(it)}_smithing"))
+            ResourceKey.create(Registries.RECIPE, Id("${getItemName(it)}_smithing"))
         ) }
 
-        offerSmithingTemplateCopyingRecipe(NguhItems.ATLANTIC_ARMOUR_TRIM, Items.NAUTILUS_SHELL)
-        offerSmithingTemplateCopyingRecipe(NguhItems.CENRAIL_ARMOUR_TRIM, ingredientFromTag(ItemTags.IRON_ORES))
-        offerSmithingTemplateCopyingRecipe(NguhItems.ICE_COLD_ARMOUR_TRIM, Items.SNOW_BLOCK)
-        offerSmithingTemplateCopyingRecipe(NguhItems.VENEFICIUM_ARMOUR_TRIM, Items.SLIME_BALL)
+        copySmithingTemplate(NguhItems.ATLANTIC_ARMOUR_TRIM, Items.NAUTILUS_SHELL)
+        copySmithingTemplate(NguhItems.CENRAIL_ARMOUR_TRIM, tag(ItemTags.IRON_ORES))
+        copySmithingTemplate(NguhItems.ICE_COLD_ARMOUR_TRIM, Items.SNOW_BLOCK)
+        copySmithingTemplate(NguhItems.VENEFICIUM_ARMOUR_TRIM, Items.SLIME_BALL)
 
         // =========================================================================
         //  Slabs and Slablets
         // =========================================================================
         for ((Lesser, Greater) in SLABLETS) {
-            offerShapelessRecipe(Lesser, Greater, "slablets", 2)
+            oneToOneConversionRecipe(Lesser, Greater, "slablets", 2)
             offerShapelessRecipe(Greater, 1, Lesser to 2)
         }
 
@@ -199,7 +199,7 @@ class NguhcraftRecipeGenerator(
             NguhBlocks.CALCITE_BRICKS to NguhBlocks.GILDED_CALCITE_BRICKS,
             NguhBlocks.CHISELED_CALCITE to NguhBlocks.GILDED_CHISELED_CALCITE,
             NguhBlocks.CHISELED_CALCITE_BRICKS to NguhBlocks.GILDED_CHISELED_CALCITE_BRICKS
-        )) offerShaped(Gilded, 2, "from_${Registries.BLOCK.getKey(Base).get().value.path.lowercase()}_and_gold_ingot") {
+        )) offerShaped(Gilded, 2, "from_${BuiltInRegistries.BLOCK.getResourceKey(Base).get().location().path.lowercase()}_and_gold_ingot") {
             pattern("GC")
             pattern("CG")
             cinput('C', Base)
@@ -361,9 +361,9 @@ class NguhcraftRecipeGenerator(
             cinput('A', Items.AMETHYST_SHARD)
         }
 
-        offerPlanksRecipe(NguhBlocks.TINTED_OAK_PLANKS, NguhItems.TINTED_LOGS, 4)
-        offerBarkBlockRecipe(NguhBlocks.TINTED_OAK_WOOD, NguhBlocks.TINTED_OAK_LOG)
-        offerBarkBlockRecipe(NguhBlocks.STRIPPED_TINTED_OAK_WOOD, NguhBlocks.STRIPPED_TINTED_OAK_LOG)
+        planksFromLogs(NguhBlocks.TINTED_OAK_PLANKS, NguhItems.TINTED_LOGS, 4)
+        woodFromLogs(NguhBlocks.TINTED_OAK_WOOD, NguhBlocks.TINTED_OAK_LOG)
+        woodFromLogs(NguhBlocks.STRIPPED_TINTED_OAK_WOOD, NguhBlocks.STRIPPED_TINTED_OAK_LOG)
         
         offerShaped(NguhBlocks.TINTED_OAK_PRESSURE_PLATE, 1, Category = RecipeCategory.REDSTONE) {
             pattern("PP")
@@ -440,7 +440,7 @@ class NguhcraftRecipeGenerator(
 
         // Bamboo (this is separate, bc bamboo doesn't have wood and therefore can't fit
         // in the usual wood families).
-        offerStonecuttingFamily(BlockFamilies.BAMBOO)
+        offerStonecuttingFamily(BlockFamilies.BAMBOO_PLANKS)
         offerStonecuttingFamily(BlockFamilies.BAMBOO_MOSAIC)
 
         for (B in BlockFamilies.BAMBOO_MOSAIC.variants) { offerStonecuttingRecipe(Out = B.value, In = Blocks.BAMBOO_PLANKS) }
@@ -459,8 +459,8 @@ class NguhcraftRecipeGenerator(
         // =========================================================================
         //  Special Recipes
         // =========================================================================
-        ComplexRecipeJsonBuilder.create(::KeyLockPairingRecipe).offerTo(E, "key_lock_pairing")
-        ComplexRecipeJsonBuilder.create(::KeyDuplicationRecipe).offerTo(E, "key_duplication")
+        SpecialRecipeBuilder.special(::KeyLockPairingRecipe).save(E, "key_lock_pairing")
+        SpecialRecipeBuilder.special(::KeyDuplicationRecipe).save(E, "key_duplication")
     }
 
     /** Add a recipe for a brocade block. */
@@ -476,7 +476,7 @@ class NguhcraftRecipeGenerator(
 
     /** Add a stonecutting recipe. */
     fun offerStonecuttingRecipe(Out: Block, In: Block, Count: Int = 1)
-        = offerStonecuttingRecipe(RecipeCategory.BUILDING_BLOCKS, Out, In, Count)
+        = stonecutterResultFromBase(RecipeCategory.BUILDING_BLOCKS, Out, In, Count)
 
     /** Add stonecutting recipes for a family. */
     fun offerStonecuttingFamily(F: BlockFamily, Base: Block = F.baseBlock) {
@@ -521,44 +521,44 @@ class NguhcraftRecipeGenerator(
 
     // Combines a call to input() and criterion() because having to specify the latter
     // all the time is just really stupid.
-    fun ShapedRecipeJsonBuilder.cinput(C: Char, I: ItemConvertible): ShapedRecipeJsonBuilder {
-        input(C, I)
-        criterion("has_${getItemPath(I)}", conditionsFromItem(I))
+    fun ShapedRecipeBuilder.cinput(C: Char, I: ItemLike): ShapedRecipeBuilder {
+        define(C, I)
+        unlockedBy("has_${getItemName(I)}", has(I))
         return this
     }
 
     inline fun offerShaped(
-        Output: ItemConvertible,
+        Output: ItemLike,
         Count: Int = 1,
         Suffix: String = "",
         Category: RecipeCategory = RecipeCategory.MISC,
-        Consumer: ShapedRecipeJsonBuilder.() -> Unit,
+        Consumer: ShapedRecipeBuilder.() -> Unit,
     ) {
-        var Name: String = getItemPath(Output)
+        var Name: String = getItemName(Output)
         if (!Suffix.isEmpty()) Name += "_$Suffix"
-        val B = createShaped(Category, Output, Count)
+        val B = shaped(Category, Output, Count)
         B.Consumer()
-        B.offerTo(E, Name)
+        B.save(E, Name)
     }
 
     // Helper function for smelting
-    fun offerSmelting(Input: ItemConvertible, Output: ItemConvertible, Experience: Float = .2f)
-            = offerSmelting(listOf(Input.asItem()), RecipeCategory.MISC, Output.asItem(), Experience, 200, null)
+    fun offerSmelting(Input: ItemLike, Output: ItemLike, Experience: Float = .2f)
+        = oreSmelting(listOf(Input.asItem()), RecipeCategory.MISC, Output.asItem(), Experience, 200, null)
 
     // offerShapelessRecipe() sucks, so this is a better version.
     @Suppress("UNCHECKED_CAST")
-    inline fun <reified T> offerShapelessRecipe(Output: ItemConvertible, Count: Int, vararg Inputs: Pair<T, Int>) {
-        val B = createShapeless(RecipeCategory.MISC, Output, Count)
+    inline fun <reified T> offerShapelessRecipe(Output: ItemLike, Count: Int, vararg Inputs: Pair<T, Int>) {
+        val B = shapeless(RecipeCategory.MISC, Output, Count)
         for ((I, C) in Inputs) when (I) {
-            is ItemConvertible -> B.input(I, C).criterion("has_${getItemPath(I)}", conditionsFromItem(I))
-            is TagKey<*> -> B.input(ingredientFromTag(I as TagKey<Item>), C).criterion("has_${I.id.path}", conditionsFromTag(I))
+            is ItemLike -> B.requires(I, C).unlockedBy("has_${getItemName(I)}", has(I))
+            is TagKey<*> -> B.requires(tag(I as TagKey<Item>), C).unlockedBy("has_${I.location.path}", has(I))
             else -> throw IllegalArgumentException("Invalid input type: ${I::class.simpleName}")
         }
 
-        B.offerTo(E, "${getItemPath(Output)}_from_${Inputs.joinToString("_and_") { 
+        B.save(E, "${getItemName(Output)}_from_${Inputs.joinToString("_and_") { 
             (I, _) -> when (I) {
-                is ItemConvertible -> getItemPath(I)
-                is TagKey<*> -> I.id.path
+                is ItemLike -> getItemName(I)
+                is TagKey<*> -> I.location.path
                 else -> throw IllegalArgumentException("Invalid input type: ${I::class.simpleName}")
             }
         }}")

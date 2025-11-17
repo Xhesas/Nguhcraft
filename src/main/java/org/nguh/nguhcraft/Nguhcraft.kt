@@ -5,19 +5,19 @@ import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
-import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtElement
+import net.minecraft.nbt.CompoundTag
+import net.minecraft.nbt.Tag
 import net.minecraft.nbt.NbtIo
-import net.minecraft.nbt.NbtSizeTracker
-import net.minecraft.registry.Registry
-import net.minecraft.registry.RegistryKey
+import net.minecraft.nbt.NbtAccounter
+import net.minecraft.core.Registry
+import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
-import net.minecraft.storage.NbtReadView
-import net.minecraft.storage.NbtWriteView
-import net.minecraft.storage.ReadView
-import net.minecraft.util.ErrorReporter
-import net.minecraft.util.Identifier
-import net.minecraft.util.WorldSavePath
+import net.minecraft.world.level.storage.TagValueInput
+import net.minecraft.world.level.storage.TagValueOutput
+import net.minecraft.world.level.storage.ValueInput
+import net.minecraft.util.ProblemReporter
+import net.minecraft.resources.ResourceLocation
+import net.minecraft.world.level.storage.LevelResource
 import org.nguh.nguhcraft.block.NguhBlocks
 import org.nguh.nguhcraft.item.NguhItems
 import org.nguh.nguhcraft.network.*
@@ -187,8 +187,8 @@ class Nguhcraft : ModInitializer {
     companion object {
         private val LOGGER = LogUtils.getLogger()
         const val MOD_ID = "nguhcraft"
-        @JvmStatic fun Id(S: String): Identifier = Identifier.of(MOD_ID, S)
-        @JvmStatic fun<T> RKey(Registry: RegistryKey<Registry<T>>, S: String): RegistryKey<T> = RegistryKey.of(Registry, Id(S))
+        @JvmStatic fun Id(S: String): ResourceLocation = ResourceLocation.fromNamespaceAndPath(MOD_ID, S)
+        @JvmStatic fun<T> RKey(Registry: ResourceKey<Registry<T>>, S: String): ResourceKey<T> = ResourceKey.create(Registry, Id(S))
 
         private fun LoadServerState(S: MinecraftServer) {
             LOGGER.info("[SETUP] Setting up server state")
@@ -198,12 +198,12 @@ class Nguhcraft : ModInitializer {
                 // Read from disk.
                 val Tag = NbtIo.readCompressed(
                     SavePath(S).inputStream(),
-                    NbtSizeTracker.ofUnlimitedBytes()
+                    NbtAccounter.unlimitedHeap()
                 )
 
                 // Load global data.
-                ErrorReporter.Logging(NguhErrorReporter(), LOGGER).use {
-                    Manager.InitFromSaveData(S, NbtReadView.create(it, S.registryManager, Tag))
+                ProblemReporter.ScopedCollector(NguhErrorReporter(), LOGGER).use {
+                    Manager.InitFromSaveData(S, TagValueInput.create(it, S.registryAccess(), Tag))
                 }
             } catch (E: Exception) {
                 LOGGER.warn("Nguhcraft: Failed to load persistent state; using defaults: ${E.message}")
@@ -213,16 +213,16 @@ class Nguhcraft : ModInitializer {
         }
 
         private fun SavePath(S: MinecraftServer): Path {
-            return S.getSavePath(WorldSavePath.ROOT).resolve("nguhcraft.dat")
+            return S.getWorldPath(LevelResource.ROOT).resolve("nguhcraft.dat")
         }
 
         private fun SaveServerState(S: MinecraftServer) {
             LOGGER.info("Saving server state")
             try {
-                ErrorReporter.Logging(NguhErrorReporter(), LOGGER).use {
-                    val WV = NbtWriteView.create(it)
+                ProblemReporter.ScopedCollector(NguhErrorReporter(), LOGGER).use {
+                    val WV = TagValueOutput.createWithoutContext(it)
                     Manager.SaveAll(S, WV)
-                    NbtIo.writeCompressed(WV.nbt, SavePath(S))
+                    NbtIo.writeCompressed(WV.buildResult(), SavePath(S))
                 }
             } catch (E: Exception) {
                 LOGGER.error("Nguhcraft: Failed to save persistent state")
