@@ -61,13 +61,8 @@ class NguhcraftBlockTagProvider(
             for (B in NguhBlockModels.VERTICAL_SLABS.filter { !it.Wood }) T.add(B.VerticalSlab)
         }
 
-        valueLookupBuilder(BlockTags.MINEABLE_WITH_AXE).let { T ->
-            for (B in NguhBlocks.CRATES) T.add(B)
-        }
-
-        valueLookupBuilder(BlockTags.WOOL).let {
-            for (B in NguhBlocks.ALL_BROCADE_BLOCKS) it.add(B)
-        }
+        valueLookupBuilder(BlockTags.MINEABLE_WITH_AXE).addAll(NguhBlocks.CRATES)
+        valueLookupBuilder(BlockTags.WOOL).addAll(NguhBlocks.ALL_BROCADE_BLOCKS.toList())
 
         // Block tags for miscellaneous custom blocks.
         valueLookupBuilder(BlockTags.PLANKS).add(NguhBlocks.TINTED_OAK_PLANKS)

@@ -2,10 +2,13 @@ package org.nguh.nguhcraft.client
 
 import net.fabricmc.api.EnvType
 import net.fabricmc.api.Environment
+import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup
 import net.minecraft.ChatFormatting
 import net.minecraft.core.Holder
+import net.minecraft.core.Registry
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.component.DataComponents
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.Style
@@ -15,21 +18,55 @@ import net.minecraft.world.effect.MobEffects
 import net.minecraft.world.entity.EquipmentSlotGroup
 import net.minecraft.world.entity.ai.attributes.Attribute
 import net.minecraft.world.entity.ai.attributes.AttributeModifier
-import net.minecraft.world.item.*
+import net.minecraft.world.item.CreativeModeTab
 import net.minecraft.world.item.CreativeModeTab.ItemDisplayParameters
+import net.minecraft.world.item.Item
+import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
+import net.minecraft.world.item.Rarity
 import net.minecraft.world.item.alchemy.PotionContents
 import net.minecraft.world.item.component.ItemAttributeModifiers
 import net.minecraft.world.item.component.ItemLore
 import net.minecraft.world.item.enchantment.Enchantment
-import net.minecraft.world.item.enchantment.Enchantments.*
+import net.minecraft.world.item.enchantment.Enchantments.CHANNELING
+import net.minecraft.world.item.enchantment.Enchantments.EFFICIENCY
+import net.minecraft.world.item.enchantment.Enchantments.FIRE_ASPECT
+import net.minecraft.world.item.enchantment.Enchantments.FORTUNE
+import net.minecraft.world.item.enchantment.Enchantments.IMPALING
+import net.minecraft.world.item.enchantment.Enchantments.KNOCKBACK
+import net.minecraft.world.item.enchantment.Enchantments.LOOTING
+import net.minecraft.world.item.enchantment.Enchantments.LOYALTY
+import net.minecraft.world.item.enchantment.Enchantments.MULTISHOT
+import net.minecraft.world.item.enchantment.Enchantments.RIPTIDE
+import net.minecraft.world.item.enchantment.Enchantments.SHARPNESS
+import org.nguh.nguhcraft.Nguhcraft.Companion.Id
+import org.nguh.nguhcraft.block.NguhBlocks
 import org.nguh.nguhcraft.enchantment.NguhcraftEnchantments.ARCANE
 import org.nguh.nguhcraft.enchantment.NguhcraftEnchantments.HYPERSHOT
 import org.nguh.nguhcraft.enchantment.NguhcraftEnchantments.SMELTING
-import java.util.*
+import org.nguh.nguhcraft.item.NguhItems
+import java.util.Optional
 
 @Environment(EnvType.CLIENT)
-object Treasures {
-    fun AddAll(Ctx: ItemDisplayParameters, Entries: CreativeModeTab.Output) {
+object NguhcraftItemGroups {
+    private val TREASURES_ITEM_GROUP: CreativeModeTab = FabricItemGroup.builder()
+        .icon { ItemStack(Items.PETRIFIED_OAK_SLAB) }
+        .title(Component.translatable("itemGroup.nguhcraft.treasures"))
+        .displayItems { Ctx, Entries -> AddAllTreasures(Ctx, Entries) }
+        .build()
+
+    private val FARMING_ITEM_GROUP: CreativeModeTab = FabricItemGroup.builder()
+        .icon { ItemStack(NguhItems.GRAPES) }
+        .title(Component.translatable("itemGroup.nguhcraft.farming"))
+        .displayItems { Ctx, Entries -> AddAllFarmingItems(Ctx, Entries) }
+        .build()
+
+    fun Init() {
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, Id("treasures"), TREASURES_ITEM_GROUP)
+        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, Id("farming"), FARMING_ITEM_GROUP)
+    }
+
+    private fun AddAllTreasures(Ctx: ItemDisplayParameters, Entries: CreativeModeTab.Output) {
         val ESSENCE_FLASK = Potion(Ctx, "ancient_drop_of_cherry", 0xFFBFD6,
             MobEffectInstance(MobEffects.HEALTH_BOOST, 60 * 20, 24),
             MobEffectInstance(MobEffects.REGENERATION, 60 * 20, 5)
@@ -89,6 +126,13 @@ object Treasures {
         Entries.accept(ItemStack(Items.PETRIFIED_OAK_SLAB))
     }
 
+    private fun AddAllFarmingItems(Ctx: ItemDisplayParameters, Entries: CreativeModeTab.Output) {
+        for (B in NguhBlocks.CRATES) Entries.accept(B)
+        Entries.accept(NguhItems.GRAPES)
+        Entries.accept(NguhItems.PEANUTS)
+        Entries.accept(NguhItems.GRAPE_SEEDS)
+        Entries.accept(NguhItems.GRAPE_LEAF)
+    }
 
     private fun Name(Name: String, Format: ChatFormatting = ChatFormatting.GOLD): Component = Component.literal(Name)
         .setStyle(Style.EMPTY.withItalic(false).applyFormat(Format))
@@ -105,7 +149,6 @@ object Treasures {
             listOf(*Effects),
             Optional.empty()
         ))
-
 
     private class Builder(private val Ctx: ItemDisplayParameters, I: Item, Key: String) {
         private val S = ItemStack(I)
@@ -145,7 +188,7 @@ object Treasures {
 
         /** Set a component on this item stack. */
         fun <T> set(type: DataComponentType<in T>, value: T? = null)
-            = apply { it.set(type, value) }
+                = apply { it.set(type, value) }
 
         /** Make this item stack unbreakable. */
         fun unbreakable() = set(DataComponents.UNBREAKABLE, net.minecraft.util.Unit.INSTANCE)

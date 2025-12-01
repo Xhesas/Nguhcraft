@@ -8,31 +8,22 @@ import net.fabricmc.api.Environment
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
-import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperties
-import net.minecraft.world.item.CreativeModeTab
-import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.Items
-import net.minecraft.core.registries.BuiltInRegistries
-import net.minecraft.core.Registry
-import net.minecraft.network.chat.Component
 import net.minecraft.ChatFormatting
+import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperties
 import net.minecraft.core.BlockPos
+import net.minecraft.network.chat.Component
 import org.nguh.nguhcraft.Nguhcraft.Companion.Id
 import org.nguh.nguhcraft.block.ChestVariantProperty
 import org.nguh.nguhcraft.block.NguhBlockModels
 import org.nguh.nguhcraft.client.render.Renderer
 import org.nguh.nguhcraft.client.render.WorldRendering
-import org.nguh.nguhcraft.item.NguhItems
 
 @Environment(EnvType.CLIENT)
 class NguhcraftClient : ClientModInitializer {
     override fun onInitializeClient() {
         ClientNetworkHandler.Init()
         Renderer.Init()
-
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, Id("treasures"), TREASURES_ITEM_GROUP)
-        Registry.register(BuiltInRegistries.CREATIVE_MODE_TAB, Id("farming"), FARMING_ITEM_GROUP)
-
+        NguhcraftItemGroups.Init()
         NguhBlockModels.InitRenderLayers()
 
         ClientCommandRegistrationCallback.EVENT.register { Dispatcher, _ ->
@@ -51,18 +42,6 @@ class NguhcraftClient : ClientModInitializer {
     }
 
     companion object {
-        val TREASURES_ITEM_GROUP: CreativeModeTab = net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup.builder()
-            .icon { ItemStack(Items.PETRIFIED_OAK_SLAB) }
-            .title(Component.translatable("itemGroup.nguhcraft.treasures"))
-            .displayItems { Ctx, Entries -> Treasures.AddAll(Ctx, Entries) }
-            .build()
-
-        val FARMING_ITEM_GROUP: CreativeModeTab = net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup.builder()
-            .icon { ItemStack(NguhItems.GRAPES) }
-            .title(Component.translatable("itemGroup.nguhcraft.farming"))
-            .displayItems { Ctx, Entries -> Farming.AddAll(Ctx, Entries) }
-            .build()
-
         // FIXME: All of these should be attached to some singleton 'Session' object so
         //        they don’t accidentally persist across saves.
         @JvmField @Volatile var InHypershotContext = false
