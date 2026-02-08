@@ -321,6 +321,30 @@ object NguhBlocks {
     )
 
     // =========================================================================
+    //  Froglights
+    // =========================================================================
+    val AZURE_FROGLIGHT = Register(
+        "azure_froglight",
+        ::RotatedPillarBlock,
+        BlockBehaviour.Properties.ofFullCopy(Blocks.OCHRE_FROGLIGHT)
+            .mapColor(MapColor.LAPIS)
+    )
+
+    val SANGUINE_FROGLIGHT = Register(
+        "sanguine_froglight",
+        ::RotatedPillarBlock,
+        BlockBehaviour.Properties.ofFullCopy(Blocks.OCHRE_FROGLIGHT)
+            .mapColor(MapColor.FIRE)
+    )
+
+    val CLEANSING_FROGLIGHT = Register(
+        "cleansing_froglight",
+        ::RotatedPillarBlock,
+        BlockBehaviour.Properties.ofFullCopy(Blocks.OCHRE_FROGLIGHT)
+            .mapColor(MapColor.SNOW)
+    )
+
+    // =========================================================================
     //  Lanterns and Chains
     // =========================================================================
     val OCHRE_LANTERN = Register(
@@ -365,10 +389,25 @@ object NguhBlocks {
             .mapColor(MapColor.COLOR_GRAY)
     )
 
+    val AZURE_LANTERN = Register(
+        "azure_lantern",
+        ::LanternBlock,
+        BlockBehaviour.Properties.ofFullCopy(Blocks.LANTERN)
+            .mapColor(MapColor.LAPIS)
+    )
+
+    val AZURE_CHAIN = Register(
+        "azure_chain",
+        ::ChainBlock,
+        BlockBehaviour.Properties.ofFullCopy(Blocks.CHAIN)
+            .mapColor(MapColor.COLOR_GRAY)
+    )
+
     val CHAINS_AND_LANTERNS = listOf(
+        AZURE_CHAIN to AZURE_LANTERN,
         OCHRE_CHAIN to OCHRE_LANTERN,
         PEARLESCENT_CHAIN to PEARLESCENT_LANTERN,
-        VERDANT_CHAIN to VERDANT_LANTERN
+        VERDANT_CHAIN to VERDANT_LANTERN,
     )
 
     // =========================================================================
@@ -408,6 +447,35 @@ object NguhBlocks {
     val CINNABAR_BRICK_SLAB_VERTICAL = RegisterVSlab("cinnabar_bricks", CINNABAR_BRICK_SLAB)
     val CINNABAR_BRICK_STAIRS = RegisterStairs(CINNABAR_BRICKS)
     val CINNABAR_BRICK_WALL = RegisterVariant(CINNABAR_BRICKS, "wall", ::WallBlock)
+
+    val CHISELED_CINNABAR_BRICKS = Register(
+        "chiseled_cinnabar_bricks",
+        ::Block,
+        BlockBehaviour.Properties.ofFullCopy(Blocks.STONE)
+            .mapColor(MapColor.NETHER)
+    )
+
+    // =========================================================================
+    //  Azure Nether Brick Blocks
+    // =========================================================================
+    val AZURE_NETHER_BRICKS = Register(
+        "azure_nether_bricks",
+        ::Block,
+        BlockBehaviour.Properties.ofFullCopy(Blocks.RED_NETHER_BRICKS)
+            .mapColor(MapColor.WARPED_NYLIUM)
+    )
+
+    val AZURE_NETHER_BRICK_SLAB = RegisterVariant(AZURE_NETHER_BRICKS, "slab", ::SlabBlock)
+    val AZURE_NETHER_BRICK_SLAB_VERTICAL = RegisterVSlab("azure_nether_bricks", AZURE_NETHER_BRICK_SLAB)
+    val AZURE_NETHER_BRICK_STAIRS = RegisterStairs(AZURE_NETHER_BRICKS)
+    val AZURE_NETHER_BRICK_WALL = RegisterVariant(AZURE_NETHER_BRICKS, "wall", ::WallBlock)
+
+    val CHISELED_AZURE_NETHER_BRICKS = Register(
+        "chiseled_azure_nether_bricks",
+        ::Block,
+        BlockBehaviour.Properties.ofFullCopy(Blocks.RED_NETHER_BRICKS)
+            .mapColor(MapColor.WARPED_NYLIUM)
+    )
 
     // =========================================================================
     //  Calcite blocks
@@ -634,6 +702,7 @@ object NguhBlocks {
         .slab(CINNABAR_BRICK_SLAB)
         .stairs(CINNABAR_BRICK_STAIRS)
         .wall(CINNABAR_BRICK_WALL)
+        .chiseled(CHISELED_CINNABAR_BRICKS)
         .family
 
     val PYRITE_BRICK_FAMILY: BlockFamily = BlockFamilies.familyBuilder(PYRITE_BRICKS)
@@ -683,6 +752,13 @@ object NguhBlocks {
         .chiseled(GILDED_CHISELED_CALCITE_BRICKS)
         .family
 
+    val AZURE_NETHER_BRICK_FAMILY: BlockFamily = BlockFamilies.familyBuilder(AZURE_NETHER_BRICKS)
+        .slab(AZURE_NETHER_BRICK_SLAB)
+        .stairs(AZURE_NETHER_BRICK_STAIRS)
+        .wall(AZURE_NETHER_BRICK_WALL)
+        .chiseled(CHISELED_AZURE_NETHER_BRICKS)
+        .family
+
     val TINTED_OAK_FAMILY: BlockFamily = BlockFamilies.familyBuilder(TINTED_OAK_PLANKS)
         .slab(TINTED_OAK_SLAB)
         .stairs(TINTED_OAK_STAIRS)
@@ -709,7 +785,8 @@ object NguhBlocks {
         GILDED_POLISHED_CALCITE_FAMILY,
         GILDED_CALCITE_BRICK_FAMILY,
         PYRITE_BRICK_FAMILY,
-        DRIPSTONE_BRICK_FAMILY
+        DRIPSTONE_BRICK_FAMILY,
+        AZURE_NETHER_BRICK_FAMILY
     )
 
     val WOOD_VARIANT_FAMILIES = arrayOf(
@@ -975,6 +1052,9 @@ object NguhBlocks {
 
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register {
             for (B in CHAINS_AND_LANTERNS.flatten()) it.accept(B)
+            it.accept(AZURE_FROGLIGHT)
+            it.accept(SANGUINE_FROGLIGHT)
+            it.accept(CLEANSING_FROGLIGHT)
         }
 
         RegisterStrippable(TINTED_OAK_LOG, STRIPPED_TINTED_OAK_LOG)

@@ -240,6 +240,7 @@ object NguhBlockModels {
         VSlab(NguhBlocks.TINTED_OAK_SLAB_VERTICAL, NguhBlocks.TINTED_OAK_PLANKS, true),
         VSlab(NguhBlocks.PYRITE_BRICK_SLAB_VERTICAL, NguhBlocks.PYRITE_BRICKS),
         VSlab(NguhBlocks.DRIPSTONE_BRICK_SLAB_VERTICAL, NguhBlocks.DRIPSTONE_BRICKS),
+        VSlab(NguhBlocks.AZURE_NETHER_BRICK_SLAB_VERTICAL, NguhBlocks.AZURE_NETHER_BRICKS),
     ).toTypedArray()
 
     @Environment(EnvType.CLIENT)
@@ -258,6 +259,11 @@ object NguhBlockModels {
         G.createTrivialCube(NguhBlocks.COMPRESSED_STONE)
         G.createTrivialCube(NguhBlocks.PYRITE)
         G.createTrivialCube(NguhBlocks.CHARCOAL_BLOCK)
+
+        // Pillar-like blocks.
+        G.createRotatedPillarWithHorizontalVariant(NguhBlocks.AZURE_FROGLIGHT, TexturedModel.COLUMN, TexturedModel.COLUMN_HORIZONTAL)
+        G.createRotatedPillarWithHorizontalVariant(NguhBlocks.SANGUINE_FROGLIGHT, TexturedModel.COLUMN, TexturedModel.COLUMN_HORIZONTAL)
+        G.createRotatedPillarWithHorizontalVariant(NguhBlocks.CLEANSING_FROGLIGHT, TexturedModel.COLUMN, TexturedModel.COLUMN_HORIZONTAL)
 
         // Chains and lanterns.
         for ((Chain, Lantern) in NguhBlocks.CHAINS_AND_LANTERNS) {

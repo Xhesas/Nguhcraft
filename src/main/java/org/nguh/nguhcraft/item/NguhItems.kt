@@ -242,6 +242,11 @@ object NguhItems {
             .stacksTo(64)
     )
 
+    var WARPED_WART = CreateItem(
+        Id("warped_wart"),
+        Item.Properties()
+    )
+
     // =========================================================================
     //  Initialisation
     // =========================================================================
@@ -289,6 +294,7 @@ object NguhItems {
         Register(GRAPE_LEAF)
         Register(GRAPE_JUICE)
         Register(STUFFED_GRAPE_LEAVES)
+        Register(WARPED_WART)
     }
 
     fun Init() {
