@@ -11,6 +11,7 @@ import net.fabricmc.fabric.api.registry.OxidizableBlocksRegistry
 import net.fabricmc.fabric.api.registry.StrippableBlockRegistry
 import net.minecraft.core.Registry
 import net.minecraft.core.component.DataComponentType
+import net.minecraft.core.particles.ParticleTypes
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.core.registries.Registries
 import net.minecraft.data.BlockFamilies
@@ -30,6 +31,7 @@ import net.minecraft.world.level.block.*
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.entity.BlockEntityType
 import net.minecraft.world.level.block.state.BlockBehaviour
+import net.minecraft.world.level.block.state.BlockBehaviour.Properties
 import net.minecraft.world.level.block.state.properties.BlockSetType
 import net.minecraft.world.level.block.state.properties.WoodType
 import net.minecraft.world.level.material.MapColor
@@ -673,6 +675,40 @@ object NguhBlocks {
     val GRAPE_CRATE = RegisterCrate("grape_crate")
     val PEANUT_CRATE = RegisterCrate("peanut_crate")
 
+    // Budding leaves manually override 'asItem()' to return the base block.
+    val BUDDING_OAK_LEAVES = RegisterWithoutItem(
+        "budding_oak_leaves",
+        { BuddingLeavesBlock(0.01F, null, it, Blocks.OAK_LEAVES, References.APPLE_ITEM) },
+        Properties.ofFullCopy(Blocks.OAK_LEAVES)
+    )
+
+    val BUDDING_DARK_OAK_LEAVES = RegisterWithoutItem(
+        "budding_dark_oak_leaves",
+        { BuddingLeavesBlock(0.01F, null, it, Blocks.DARK_OAK_LEAVES, References.APPLE_ITEM) },
+        Properties.ofFullCopy(Blocks.DARK_OAK_LEAVES)
+    )
+
+    val BUDDING_CHERRY_LEAVES = RegisterWithoutItem(
+        "budding_cherry_leaves",
+        { BuddingLeavesBlock(0.1F, ParticleTypes.CHERRY_LEAVES, it, Blocks.CHERRY_LEAVES, References.CHERRY_ITEM) },
+        Properties.ofFullCopy(Blocks.CHERRY_LEAVES)
+    )
+
+    @JvmField
+    val LEAVES_TO_BUDDING_LEAVES = mapOf(
+        Blocks.OAK_LEAVES to BUDDING_OAK_LEAVES,
+        Blocks.DARK_OAK_LEAVES to BUDDING_DARK_OAK_LEAVES,
+        Blocks.CHERRY_LEAVES to BUDDING_CHERRY_LEAVES
+        // When adding an entry here, also update
+        // LeavesBlockMixin::IsBuddingLeavesBlock().
+    )
+
+    val BUDDING_LEAVES_TO_LEAVES = buildMap {
+        for ((K, V) in LEAVES_TO_BUDDING_LEAVES) put(V, K)
+    }
+
+    val BUDDING_LEAVES get() = LEAVES_TO_BUDDING_LEAVES.values
+
     // =========================================================================
     //  Block entities
     // =========================================================================
@@ -1069,6 +1105,7 @@ object NguhBlocks {
         RegisterFlammable(TINTED_OAK_WOOD, 5, 5)
         RegisterFlammable(STRIPPED_TINTED_OAK_LOG, 5, 5)
         RegisterFlammable(STRIPPED_TINTED_OAK_WOOD, 5, 5)
+        for (B in BUDDING_LEAVES) RegisterFlammable(B, 60, 30)
 
         RegisterCopper(
             listOf(CUT_COPPER_SLAB_VERTICAL, EXPOSED_CUT_COPPER_SLAB_VERTICAL, WEATHERED_CUT_COPPER_SLAB_VERTICAL, OXIDIZED_CUT_COPPER_SLAB_VERTICAL),
