@@ -20,13 +20,16 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.Level
+import net.minecraft.world.level.LevelReader
 import net.minecraft.world.level.block.Block
+import net.minecraft.world.level.block.BonemealableBlock
 import net.minecraft.world.level.block.LeavesBlock
 import net.minecraft.world.level.block.state.BlockState
 import net.minecraft.world.level.block.state.StateDefinition
 import net.minecraft.world.level.block.state.properties.IntegerProperty
 import net.minecraft.world.level.gameevent.GameEvent
 import net.minecraft.world.phys.BlockHitResult
+import kotlin.math.min
 
 class BuddingLeavesBlock(
     ParticleChance: Float,
@@ -34,7 +37,7 @@ class BuddingLeavesBlock(
     Settings: Properties,
     val BaseBlock: Block,
     val FruitKey: ResourceKey<Item>,
-) : LeavesBlock(ParticleChance, Settings) {
+) : LeavesBlock(ParticleChance, Settings), BonemealableBlock {
     init { registerDefaultState(defaultBlockState().setValue(AGE, MIN_AGE)) }
 
     // It's important that this is computed at the time of access and not initialisation.
@@ -114,6 +117,30 @@ class BuddingLeavesBlock(
     override fun asItem() = BaseBlock.asItem()
 
     override fun codec() = CODEC
+
+    override fun isValidBonemealTarget(
+        LR: LevelReader,
+        Pos: BlockPos,
+        St: BlockState
+    ) = St.getValue(AGE) < MAX_AGE
+
+    override fun isBonemealSuccess(
+        L: Level,
+        RS: RandomSource,
+        Pos: BlockPos,
+        St: BlockState
+    ) = true
+
+    override fun performBonemeal(
+        SL: ServerLevel,
+        RS: RandomSource,
+        Pos: BlockPos,
+        St: BlockState
+    ) {
+        val NewAge = min(St.getValue(AGE) + 1, MAX_AGE)
+        SL.setBlock(Pos, St.setValue(AGE, NewAge), UPDATE_CLIENTS)
+    }
+
     companion object {
         val CODEC: MapCodec<BuddingLeavesBlock> = RecordCodecBuilder.mapCodec {
             it.group(

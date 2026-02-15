@@ -1059,6 +1059,9 @@ object NguhBlocks {
     @JvmField
     val CAN_DUPLICATE_WITH_BONEMEAL = TagKey.create(Registries.BLOCK, Id("can_duplicate_with_bonemeal"))
 
+    @JvmField
+    val CAN_RANDOM_TICK_WITH_BONEMEAL = TagKey.create(Registries.BLOCK, Id("can_random_tick_with_bonemeal"))
+
     // =========================================================================
     //  Initialisation
     // =========================================================================

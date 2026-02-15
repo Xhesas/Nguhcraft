@@ -112,6 +112,9 @@ class NguhcraftBlockTagProvider(
             .add(Blocks.CORNFLOWER)
             .add(Blocks.LILY_OF_THE_VALLEY)
 
+        valueLookupBuilder(NguhBlocks.CAN_RANDOM_TICK_WITH_BONEMEAL)
+            .addAll(NguhBlocks.BUDDING_LEAVES_TO_LEAVES.values)
+
         // Add blocks from families.
         val Fences = valueLookupBuilder(BlockTags.FENCES)
         val Walls = valueLookupBuilder(BlockTags.WALLS)
