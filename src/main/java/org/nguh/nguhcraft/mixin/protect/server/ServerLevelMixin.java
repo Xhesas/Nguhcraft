@@ -1,5 +1,6 @@
 package org.nguh.nguhcraft.mixin.protect.server;
 
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
@@ -7,6 +8,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.WritableLevelData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.dimension.DimensionType;
@@ -19,6 +21,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -45,6 +48,19 @@ public abstract class ServerLevelMixin extends Level implements ProtectionManage
             E.discard();
             CIR.setReturnValue(false);
         }
+    }
+
+    /** Disable random ticks of protected blocks. */
+    @Redirect(
+        method = "tickChunk",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/level/block/state/BlockState;randomTick(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/core/BlockPos;Lnet/minecraft/util/RandomSource;)V"
+        )
+    )
+    private void inject$tickChunk(BlockState St, ServerLevel SL, BlockPos Pos, RandomSource RS) {
+        if (ProtectionManager.PermitRandomTicks(SL, Pos))
+            St.randomTick(SL, Pos, RS);
     }
 
     /** Prevent snow fall, freezing, etc. in protected regions. */

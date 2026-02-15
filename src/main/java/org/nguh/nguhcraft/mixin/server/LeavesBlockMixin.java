@@ -97,8 +97,6 @@ public abstract class LeavesBlockMixin {
         RandomSource R,
         CallbackInfo CI
     ) {
-        if (ProtectionManager.IsProtectedBlock(W, Pos)) return;
-
         // If this block doesn't have a corresponding budding block, give up.
         Optional<Block> BuddingBlock = getBuddingLeavesBlock(St);
         if (BuddingBlock.isEmpty()) return;

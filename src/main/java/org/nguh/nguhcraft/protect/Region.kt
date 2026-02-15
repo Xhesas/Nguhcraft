@@ -117,6 +117,9 @@ open class Region(
          */
         PRESSURE_PLATES,
 
+        /** Allow random ticks. */
+        RANDOM_TICKS,
+
         /** Whether to render the entry/exit barrier if there is one. */
         RENDER_ENTRY_EXIT_BARRIER,
 
@@ -218,6 +221,9 @@ open class Region(
 
     /** Check if this region allows players to be attacked. */
     fun AllowsPvP() = Test(Flags.ATTACK_PLAYERS)
+
+    /** Check if this region allows random ticks. */
+    fun AllowsRandomTicks() = Test(Flags.RANDOM_TICKS)
 
     /** Check if this region allows teleportation. */
     fun AllowsTeleportation() = Test(Flags.TELEPORT)

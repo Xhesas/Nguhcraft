@@ -27,6 +27,7 @@ import net.minecraft.core.BlockPos
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.shapes.VoxelShape
 import net.minecraft.world.level.Level
+import net.minecraft.world.level.block.CampfireBlock
 import org.nguh.nguhcraft.isa
 import org.nguh.nguhcraft.item.IsLocked
 import org.nguh.nguhcraft.item.KeyItem
@@ -55,7 +56,7 @@ typealias RegionLists = Map<ResourceKey<Level>, Collection<Region>>
  * This API generally provides three families of functions:
  *
  * - ‘AllowX’, which check whether a *player* is allowed to perform an action.
- * - ‘IsX’, which check whether an action is allowed in the absence of a player.
+ * - ‘IsX’/’PermitX’, which check whether an action is allowed in the absence of a player.
  * - ‘HandleX’, which does the above but may also modify an action to do something else instead.
  *
  * For example:
@@ -404,6 +405,19 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
         return R.AllowsHostileMobSpawning()
     }
 
+    /** Check if random ticks are allowed. */
+    private fun _PermitRandomTicks(W: Level, Pos: BlockPos): Boolean {
+        val R = _FindRegionContainingBlock(W, Pos) ?: return true
+
+        // Always allow ticking campfire blocks since that's required to spawn
+        // smoke particles (yes, that’s done via random ticks for some ungodly
+        // reason).
+        if (W.getBlockState(Pos).block is CampfireBlock)
+            return true
+
+        return R.AllowsRandomTicks()
+    }
+
     /**
      * Get the regions for a world.
      *
@@ -522,6 +536,10 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
         @JvmStatic
         fun IsSpawningAllowed(E: Entity) =
             Get(E.level())._IsSpawningAllowed(E)
+
+        @JvmStatic
+        fun PermitRandomTicks(W: Level, Pos: BlockPos) =
+            Get(W)._PermitRandomTicks(W, Pos)
     }
 }
 

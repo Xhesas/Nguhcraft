@@ -27,17 +27,4 @@ public abstract class SnowLayerBlockMixin {
         if (WV instanceof Level W && ProtectionManager.IsProtectedBlock(W, Pos))
             CIR.setReturnValue(false);
     }
-
-    /** Prevent protected snow from melting. */
-    @Inject(method = "randomTick", at = @At("HEAD"), cancellable = true)
-    private void inject$randomTick(
-        BlockState St,
-        ServerLevel W,
-        BlockPos Pos,
-        RandomSource Rng,
-        CallbackInfo CI
-    ) {
-        if (ProtectionManager.IsProtectedBlock(W, Pos))
-            CI.cancel();
-    }
 }
