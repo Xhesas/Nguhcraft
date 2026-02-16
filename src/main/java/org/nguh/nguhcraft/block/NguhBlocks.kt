@@ -27,12 +27,14 @@ import net.minecraft.util.StringRepresentable
 import net.minecraft.world.item.BlockItem
 import net.minecraft.world.item.CreativeModeTabs
 import net.minecraft.world.item.Item
+import net.minecraft.world.item.Rarity
 import net.minecraft.world.level.block.*
 import net.minecraft.world.level.block.entity.BlockEntity
 import net.minecraft.world.level.block.entity.BlockEntityType
 import net.minecraft.world.level.block.state.BlockBehaviour
 import net.minecraft.world.level.block.state.BlockBehaviour.Properties
 import net.minecraft.world.level.block.state.properties.BlockSetType
+import net.minecraft.world.level.block.state.properties.NoteBlockInstrument
 import net.minecraft.world.level.block.state.properties.WoodType
 import net.minecraft.world.level.material.MapColor
 import net.minecraft.world.level.material.PushReaction
@@ -321,6 +323,17 @@ object NguhBlocks {
         BlockBehaviour.Properties.ofFullCopy(Blocks.COAL_BLOCK)
             .mapColor(MapColor.TERRACOTTA_GRAY)
     )
+
+    val NGUHROVISION_TROPHY = Register(
+        "nguhrovision_trophy",
+        ::TrophyBlock,
+        Properties.of()
+			.mapColor(MapColor.GOLD)
+			.instrument(NoteBlockInstrument.BELL)
+			.sound(SoundType.METAL)
+            .instabreak()
+            .pushReaction(PushReaction.DESTROY)
+    ) { B, S -> BlockItem(B, S.stacksTo(1).rarity(Rarity.EPIC)) }
 
     // =========================================================================
     //  Froglights
@@ -1046,7 +1059,8 @@ object NguhBlocks {
         STRIPPED_TINTED_OAK_WOOD,
         IRON_GRATE,
         WROUGHT_IRON_GRATE,
-        CHARCOAL_BLOCK
+        CHARCOAL_BLOCK,
+        NGUHROVISION_TROPHY
     ).also {
         it.addAll(CHAINS_AND_LANTERNS.flatten())
         it.addAll(ALL_BROCADE_BLOCKS)
@@ -1087,6 +1101,7 @@ object NguhBlocks {
             for (B in ALL_VARIANT_FAMILY_BLOCKS) it.accept(B)
             for (B in VERTICAL_SLABS) it.accept(B)
             for (B in ALL_BROCADE_BLOCKS) it.accept(B)
+            it.accept(NGUHROVISION_TROPHY)
         }
 
         ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.FUNCTIONAL_BLOCKS).register {
