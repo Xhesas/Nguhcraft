@@ -2,8 +2,6 @@ package org.nguh.nguhcraft.server
 
 import com.mojang.logging.LogUtils
 import net.minecraft.world.entity.player.Player
-import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.Tag
 import net.minecraft.resources.ResourceKey
 import net.minecraft.server.MinecraftServer
 import net.minecraft.commands.CommandSourceStack
@@ -21,6 +19,7 @@ import org.nguh.nguhcraft.network.ClientboundSyncProtectionMgrPacket
 import org.nguh.nguhcraft.protect.ProtectionManager
 import org.nguh.nguhcraft.protect.Region
 import java.util.*
+import kotlin.reflect.full.declaredMemberProperties
 
 /** Used to signal that a region’s properties are invalid. */
 data class MalformedRegionException(val Msg: Component) : Exception()
@@ -34,6 +33,7 @@ class ServerRegion(
 
     RegionData: Region,
 ): Region(
+    // FIXME: This is really stupid and error prone whenever a field is added to 'Region'.
     Name = RegionData.Name,
     FromX = RegionData.MinX,
     FromZ = RegionData.MinZ,
@@ -41,6 +41,7 @@ class ServerRegion(
     ToZ = RegionData.MaxZ,
     ColourOverride = Optional.ofNullable(RegionData.ColourOverride),
     _Flags = RegionData.RegionFlags,
+    _BypassPlayers = RegionData.BypassPlayers,
 ) {
     /** Make sure that the name is valid . */
     init {
@@ -83,6 +84,44 @@ class ServerRegion(
         .append(":")
         .append(Component.literal(Name).withStyle(ChatFormatting.AQUA))
 
+    /** Display this region’s stats. */
+    fun GetStats(S: MinecraftServer): Component {
+        val Stats = Component.empty()
+        Flags.entries.forEach {
+            val Status = if (Test(it)) Component.literal("allow").withStyle(ChatFormatting.GREEN)
+            else Component.literal("deny").withStyle(ChatFormatting.RED)
+            Stats.append("\n - ")
+                .append(Component.literal(it.name.lowercase()).withColor(Constants.Orange))
+                .append(": ")
+                .append(Status)
+        }
+
+        Stats.append("\n - ")
+            .append(Component.literal("bypass").withColor(Constants.Orange))
+            .append(": ")
+
+        if (BypassPlayers.isNotEmpty()) {
+            for (Id in BypassPlayers) {
+                Stats.append("\n    - ")
+                val SP = S.playerList.getPlayer(Id)
+                if (SP == null) Stats.append(Component.literal(Id.toString()).withStyle(ChatFormatting.GRAY))
+                else Stats.append(SP.Name)
+            }
+        } else {
+            Stats.append(Component.literal("none").withStyle(ChatFormatting.GREEN))
+        }
+
+        fun Display(T: RegionTrigger) {
+            Stats.append("\n - ")
+            T.AppendName(Stats)
+            Stats.append(":\n")
+            T.AppendCommands(Stats, 4)
+        }
+
+        Display(PlayerEntryTrigger)
+        Display(PlayerLeaveTrigger)
+        return Stats
+    }
 
     /** Run a player trigger. */
     fun InvokePlayerTrigger(SP: ServerPlayer, T: RegionTrigger) {
@@ -125,30 +164,6 @@ class ServerRegion(
 
         RegionFlags.Set(Flag, Allow)
         S.ProtectionManager.Sync(S)
-    }
-
-    /** Display this region’s stats. */
-    val Stats: Component get() {
-        val S = Component.empty()
-        Flags.entries.forEach {
-            val Status = if (Test(it)) Component.literal("allow").withStyle(ChatFormatting.GREEN)
-            else Component.literal("deny").withStyle(ChatFormatting.RED)
-            S.append("\n - ")
-                .append(Component.literal(it.name.lowercase()).withColor(Constants.Orange))
-                .append(": ")
-                .append(Status)
-        }
-
-        fun Display(T: RegionTrigger) {
-            S.append("\n - ")
-            T.AppendName(S)
-            S.append(":\n")
-            T.AppendCommands(S, 4)
-        }
-
-        Display(PlayerEntryTrigger)
-        Display(PlayerLeaveTrigger)
-        return S
     }
 
     /** Tick this region. */
@@ -372,8 +387,8 @@ class ServerProtectionManager(private val S: MinecraftServer) : ProtectionManage
     }
 
     /** Check if this player bypasses region protection. */
-    override fun _BypassesRegionProtection(PE: Player) =
-        (PE as ServerPlayer).Data.BypassesRegionProtection
+    override fun _AlwaysBypassesRegionProtection(PE: Player) =
+        (PE as ServerPlayer).Data.AlwaysBypassesRegionProtection
 
     /**
      * This function is the intended way to delete a region from a world.

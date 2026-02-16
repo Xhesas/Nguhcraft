@@ -113,7 +113,7 @@ object ClientNetworkHandler {
     /** Sync protection bypass state. */
     private fun HandleSyncProtectionBypassPacket(Packet: ClientboundSyncFlagPacket) {
         when (Packet.Flag) {
-            ClientFlags.BYPASSES_REGION_PROTECTION -> NguhcraftClient.BypassesRegionProtection = Packet.Value
+            ClientFlags.ALWAYS_BYPASSES_REGION_PROTECTION -> NguhcraftClient.BypassesRegionProtection = Packet.Value
             ClientFlags.IN_HYPERSHOT_CONTEXT -> NguhcraftClient.InHypershotContext = Packet.Value
             ClientFlags.VANISHED -> NguhcraftClient.Vanished = Packet.Value
         }

@@ -90,7 +90,7 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
      */
     private fun _AllowBlockModify(PE: Player, W: Level, Pos: BlockPos): Boolean {
         // Player has bypass. Always allow.
-        if (_BypassesRegionProtection(PE)) return true
+        if (_BypassesRegionProtectionAt(PE, W, Pos)) return true
 
         // Player is not linked. Always deny.
         if (!IsLinked(PE)) return false
@@ -104,16 +104,16 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
 
     /** Check if this entity is protected from attacks by a player. */
     private fun _AllowEntityAttack(AttackingPlayer: Player, AttackedEntity: Entity): Boolean {
-        fun Allow(Predicate: (R: Region) -> Boolean): Boolean {
+        fun AllowIf(Predicate: (R: Region) -> Boolean): Boolean {
             val R = _FindRegionContainingBlock(
                 AttackedEntity.level(),
                 AttackedEntity.blockPosition()
             ) ?: return true
-            return Predicate(R)
+            return Predicate(R) || R.BypassesProtection(AttackingPlayer)
         }
 
         // Player has bypass. Always allow.
-        if (_BypassesRegionProtection(AttackingPlayer)) return true
+        if (_AlwaysBypassesRegionProtection(AttackingPlayer)) return true
 
         // Player is not linked. Always deny.
         if (!IsLinked(AttackingPlayer)) return false
@@ -121,22 +121,23 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
         // Check region flags.
         return when (AttackedEntity) {
             is Enemy -> true
-            is Player -> Allow(Region::AllowsPvP)
-            is VehicleEntity -> Allow(Region::AllowsVehicleUse)
-            else -> Allow(Region::AllowsAttackingFriendlyEntities)
+            is Player -> AllowIf(Region::AllowsPvP)
+            is VehicleEntity -> AllowIf(Region::AllowsVehicleUse)
+            else -> AllowIf(Region::AllowsAttackingFriendlyEntities)
         }
     }
 
     /** Check if a player is allowed to interact (= right-click) with an entity. */
     private fun _AllowEntityInteract(PE: Player, E: Entity): Boolean {
         // Player has bypass. Always allow.
-        if (_BypassesRegionProtection(PE)) return true
+        if (_AlwaysBypassesRegionProtection(PE)) return true
 
         // Player is not linked. Always deny.
         if (!IsLinked(PE)) return false
 
         // Check region flags.
         val R = _FindRegionContainingBlock(E.level(), E.blockPosition()) ?: return true
+        if (R.BypassesProtection(PE)) return true
         return when (E) {
             is VehicleEntity, is HappyGhast -> R.AllowsVehicleUse()
             is LeashFenceKnotEntity -> R.AllowsLeashing()
@@ -155,7 +156,7 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
     /** Check if a player is allowed to use an item (not on a block). */
     private fun _AllowItemUse(PE: Player, W: Level, St: ItemStack): Boolean {
         // Player has bypass. Always allow.
-        if (_BypassesRegionProtection(PE)) return true
+        if (_BypassesRegionProtectionAt(PE, W, PE.blockPosition())) return true
 
         // Player is not linked. Always deny.
         if (!IsLinked(PE)) return false
@@ -179,7 +180,7 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
     private fun _AllowTeleport(E: Entity, DestWorld: Level, Pos: BlockPos): TeleportResult {
         // Always allow non-players to teleport; this is necessary so we can
         // move mobs and other entities with commands if need be.
-        if (E !is Player || _BypassesRegionProtection(E)) return TeleportResult.OK
+        if (E !is Player || _BypassesRegionProtectionAt(E, DestWorld, Pos)) return TeleportResult.OK
 
         // Check if the player is allowed to leave their current region.
         //
@@ -198,7 +199,7 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
     private fun _AllowTeleportToFromAnywhere(E: Entity, DestWorld: Level, Pos: BlockPos): Boolean {
         // Always allow non-players to teleport; this is necessary so we can
         // move mobs and other entities with commands if need be.
-        if (E !is Player || _BypassesRegionProtection(E)) return true
+        if (E !is Player || _BypassesRegionProtectionAt(E, DestWorld, Pos)) return true
 
         // Check if the player is allowed to enter the destination region.
         return _AllowTeleportToImpl(DestWorld, Pos) == TeleportResult.OK
@@ -210,8 +211,15 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
         else TeleportResult.ENTRY_DISALLOWED
     }
 
-    /** Check if a player bypasses region protection. */
-    abstract fun _BypassesRegionProtection(PE: Player): Boolean
+    /** Check if a player always bypasses region protection. */
+    abstract fun _AlwaysBypassesRegionProtection(PE: Player): Boolean
+
+    /** Check if a player always bypasses region protection in a region. */
+    fun _BypassesRegionProtectionAt(PE: Player, L: Level, Pos: BlockPos): Boolean {
+        if (_AlwaysBypassesRegionProtection(PE)) return true
+        val R = _FindRegionContainingBlock(L, Pos) ?: return false
+        return R.BypassesProtection(PE)
+    }
 
     /** Find the region that contains a block. */
     private fun _FindRegionContainingBlock(W: Level, Pos: BlockPos) =
@@ -219,7 +227,7 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
 
     /** Get entity collisions. */
     private fun _GetCollisionsForEntity(W: Level, E: Entity, Consumer: Consumer<List<VoxelShape>>) {
-        if (E !is Player || _BypassesRegionProtection(E)) return
+        if (E !is Player || _AlwaysBypassesRegionProtection(E)) return
 
         // Find all regions that contain the entity.
         val List = RegionListFor(W)
@@ -245,7 +253,7 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
      */
     private fun _HandleBlockInteract(PE: Player, W: Level, Pos: BlockPos, Stack: ItemStack?): InteractionResult {
         // Player has bypass. Always allow.
-        if (_BypassesRegionProtection(PE)) return InteractionResult.SUCCESS
+        if (_BypassesRegionProtectionAt(PE, W, Pos)) return InteractionResult.SUCCESS
 
         // Player is not linked. Always deny.
         if (!IsLinked(PE)) return InteractionResult.FAIL
@@ -485,8 +493,8 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
             Get(DestWorld)._AllowTeleportToFromAnywhere(TeleportingEntity, DestWorld, Pos)
 
         @JvmStatic
-        fun BypassesRegionProtection(PE: Player) =
-            Get(PE.level())._BypassesRegionProtection(PE)
+        fun AlwaysBypassesRegionProtection(PE: Player) =
+            Get(PE.level())._AlwaysBypassesRegionProtection(PE)
 
         /** Find the region that contains a block. */
         @JvmStatic

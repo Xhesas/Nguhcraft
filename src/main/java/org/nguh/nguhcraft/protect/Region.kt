@@ -2,9 +2,11 @@ package org.nguh.nguhcraft.protect
 
 import com.mojang.serialization.Codec
 import com.mojang.serialization.codecs.RecordCodecBuilder
+import net.minecraft.core.UUIDUtil
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.codec.ByteBufCodecs
 import net.minecraft.util.CommonColors
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.phys.shapes.BooleanOp
 import net.minecraft.world.phys.shapes.VoxelShape
 import net.minecraft.world.phys.shapes.Shapes
@@ -12,6 +14,7 @@ import org.nguh.nguhcraft.SmallEnumSet
 import org.nguh.nguhcraft.XZRect
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
+import kotlin.uuid.Uuid
 
 /** A protected region. */
 open class Region(
@@ -32,8 +35,9 @@ open class Region(
      */
     ColourOverride: Optional<Int> = Optional.empty(),
 
-    /** Parameter used in deserialisation. */
+    /** Parameters used in deserialisation. */
     _Flags: SmallEnumSet<Flags>? = null,
+    _BypassPlayers: List<UUID> = listOf(),
 ) : XZRect(
     FromX = FromX,
     FromZ = FromZ,
@@ -155,6 +159,9 @@ open class Region(
      */
     val RegionFlags = _Flags ?: SmallEnumSet(Flags.PLAYER_ENTRY, Flags.PLAYER_EXIT)
 
+    /** Players that bypass region protection in this region. */
+    val BypassPlayers: MutableList<UUID> = _BypassPlayers.toMutableList()
+
     /** Colour override, if any. */
     var ColourOverride: Int? = ColourOverride.getOrNull()
         protected set
@@ -244,9 +251,11 @@ open class Region(
         else -> null
     }
 
+    /** Check if a player bypasses protection in this region. */
+    fun BypassesProtection(PE: Player): Boolean = BypassPlayers.contains(PE.uuid)
+
     /** Whether we should render the entry/exit barrier. */
     fun ShouldRenderEntryExitBarrier() = BarrierColor() != null
-
 
     /** Helper to simplify testing flags. */
     protected fun Test(Flag: Flags) = RegionFlags.IsSet(Flag)
@@ -264,8 +273,9 @@ open class Region(
                 Codec.INT.fieldOf("MinZ").forGetter(Region::MinZ),
                 Codec.INT.fieldOf("MaxX").forGetter(Region::MaxX),
                 Codec.INT.fieldOf("MaxZ").forGetter(Region::MaxZ),
-                Codec.INT.optionalFieldOf("ColourOverride").forGetter({ Optional.ofNullable(it.ColourOverride) }),
+                Codec.INT.optionalFieldOf("ColourOverride").forGetter { Optional.ofNullable(it.ColourOverride) },
                 SmallEnumSet.CreateCodec(Flags.entries).fieldOf("RegionFlags").forGetter(Region::RegionFlags),
+                UUIDUtil.CODEC.listOf().optionalFieldOf("BypassPlayers", listOf()).forGetter(Region::BypassPlayers)
             ).apply(it, ::Region)
         }
 
@@ -277,6 +287,7 @@ open class Region(
             ByteBufCodecs.INT, Region::MaxZ,
             ByteBufCodecs.optional(ByteBufCodecs.INT), { Optional.ofNullable(it.ColourOverride) },
             SmallEnumSet.CreatePacketCodec<Flags>(), Region::RegionFlags,
+            UUIDUtil.STREAM_CODEC.apply(ByteBufCodecs.list()), Region::BypassPlayers,
             ::Region
         )
     }

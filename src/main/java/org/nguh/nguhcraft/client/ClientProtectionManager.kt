@@ -16,7 +16,7 @@ class ClientProtectionManager(
 ) : ProtectionManager(
     Packet.Regions
 ) {
-    override fun _BypassesRegionProtection(PE: Player) =
+    override fun _AlwaysBypassesRegionProtection(PE: Player) =
         if (PE is LocalPlayer) NguhcraftClient.BypassesRegionProtection
         else false
 

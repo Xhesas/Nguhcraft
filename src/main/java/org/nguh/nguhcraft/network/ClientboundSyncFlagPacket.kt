@@ -2,13 +2,12 @@ package org.nguh.nguhcraft.network
 
 import io.netty.buffer.ByteBuf
 import net.minecraft.network.RegistryFriendlyByteBuf
-import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import org.nguh.nguhcraft.Utils
 
 enum class ClientFlags {
     IN_HYPERSHOT_CONTEXT,
-    BYPASSES_REGION_PROTECTION,
+    ALWAYS_BYPASSES_REGION_PROTECTION,
     VANISHED,
 }
 

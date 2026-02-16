@@ -11,7 +11,6 @@ import org.nguh.nguhcraft.Read
 import org.nguh.nguhcraft.Write
 import java.util.*
 import kotlin.jvm.optionals.getOrNull
-import kotlin.text.ifEmpty
 
 /**
  * Custom data saved with players.
@@ -30,8 +29,8 @@ class PlayerData {
     /** Whether this player is currently a moderator. */
     var IsModerator = false
 
-    /** Whether this player bypasses region protection. */
-    var BypassesRegionProtection = false
+    /** Whether this player bypasses region protection in every region. */
+    var AlwaysBypassesRegionProtection = false
 
     /** Whether we should send the console stdout/stderr to this player. */
     var IsSubscribedToConsole = false
@@ -79,7 +78,7 @@ class PlayerData {
             it.group(
                 Codec.BOOL.optionalFieldOf("Vanished", false).forGetter(PlayerData::Vanished),
                 Codec.BOOL.optionalFieldOf("IsModerator", false).forGetter(PlayerData::IsModerator),
-                Codec.BOOL.optionalFieldOf("BypassesRegionProtection", false).forGetter(PlayerData::BypassesRegionProtection),
+                Codec.BOOL.optionalFieldOf("BypassesRegionProtection", false).forGetter(PlayerData::AlwaysBypassesRegionProtection),
                 Codec.BOOL.optionalFieldOf("IsSubscribedToConsole", false).forGetter(PlayerData::IsSubscribedToConsole),
                 SerialisedTeleportTarget.CODEC.optionalFieldOf("LastPositionBeforeTeleport").forGetter { Optional.ofNullable(it.LastPositionBeforeTeleport) },
                 Home.CODEC.listOf().optionalFieldOf("Homes", listOf()).forGetter(PlayerData::Homes),
@@ -93,7 +92,7 @@ class PlayerData {
                 SV, Mod, Bypass, Console, Back, Homes, Discord, Colour, Name, Avatar, Muted, LastName -> PlayerData().also {
                     it.Vanished = SV
                     it.IsModerator = Mod
-                    it.BypassesRegionProtection = Bypass
+                    it.AlwaysBypassesRegionProtection = Bypass
                     it.IsSubscribedToConsole = Console
                     it.LastPositionBeforeTeleport = Back.getOrNull()
                     it.Homes.addAll(Homes)

@@ -43,11 +43,9 @@ import net.minecraft.commands.arguments.coordinates.Vec3Argument
 import net.minecraft.core.BlockPos
 import net.minecraft.server.level.ColumnPos
 import net.minecraft.core.Direction
-import net.minecraft.network.chat.contents.PlainTextContents
 import net.minecraft.world.phys.Vec3
 import net.minecraft.world.level.levelgen.Heightmap
 import net.minecraft.world.level.Level
-import net.minecraft.world.level.chunk.status.ChunkStatus
 import org.nguh.nguhcraft.Constants
 import org.nguh.nguhcraft.server.MCBASIC
 import org.nguh.nguhcraft.Nguhcraft.Companion.Id
@@ -65,6 +63,7 @@ import org.nguh.nguhcraft.server.*
 import org.nguh.nguhcraft.server.ServerUtils.IsIntegratedServer
 import org.nguh.nguhcraft.server.ServerUtils.StrikeLightning
 import org.nguh.nguhcraft.server.dedicated.Vanish
+import kotlin.reflect.full.declaredMemberProperties
 
 fun CommandSourceStack.Error(Msg: String?) = sendFailure(Component.nullToEmpty(Msg))
 
@@ -167,9 +166,9 @@ object Commands {
         private val NOT_BYPASSING = ReplyMsg("No longer bypassing region protection.")
 
         fun Toggle(S: CommandSourceStack, SP: ServerPlayer): Int {
-            val NewState = !SP.Data.BypassesRegionProtection
-            SP.Data.BypassesRegionProtection = NewState
-            SP.SetClientFlag(ClientFlags.BYPASSES_REGION_PROTECTION, NewState)
+            val NewState = !SP.Data.AlwaysBypassesRegionProtection
+            SP.Data.AlwaysBypassesRegionProtection = NewState
+            SP.SetClientFlag(ClientFlags.ALWAYS_BYPASSES_REGION_PROTECTION, NewState)
             S.sendSystemMessage(if (NewState) BYPASSING else NOT_BYPASSING)
             return 1
         }
@@ -590,6 +589,23 @@ object Commands {
         private val NOT_IN_ANY_REGION = Component.nullToEmpty("You are not in any region!")
         private val CANNOT_CREATE_EMPTY = Component.nullToEmpty("Refusing to create empty region!")
 
+        fun AddPlayerBypass(S: CommandSourceStack, R: ServerRegion, SP: ServerPlayer): Int {
+            if (R.BypassPlayers.contains(SP.uuid)) {
+                S.Error("This player already bypasses protection in this region")
+                return 0
+            }
+
+            R.BypassPlayers.add(SP.uuid)
+            S.Reply(R.AppendWorldAndName(Component
+                .literal("Added player ")
+                .append(SP.Name)
+                .append(" to region ")
+            ))
+
+            S.server.ProtectionManager.Sync(S.server)
+            return 1
+        }
+
         fun AddRegion(S: CommandSourceStack, W: Level, Name: String, From: ColumnPos, To: ColumnPos): Int {
             if (From == To) {
                 S.sendFailure(CANNOT_CREATE_EMPTY)
@@ -629,6 +645,13 @@ object Commands {
                 S.sendFailure(E.Msg)
                 return 0
             }
+        }
+
+        fun ClearBypassList(S: CommandSourceStack, R: ServerRegion): Int {
+            R.BypassPlayers.clear()
+            S.server.ProtectionManager.Sync(S.server)
+            S.Reply(R.AppendWorldAndName(Component.literal("Cleared bypass list for ")))
+            return 0
         }
 
         fun DeleteRegion(S: CommandSourceStack, R: ServerRegion): Int {
@@ -677,7 +700,7 @@ object Commands {
         fun PrintRegionInfo(S: CommandSourceStack, R: ServerRegion): Int {
             val Stats = R.AppendWorldAndName(Component.literal("Region "))
             R.AppendBounds(Stats)
-            Stats.append(R.Stats)
+            Stats.append(R.GetStats(S.server))
             S.Reply(Stats)
             return 1
         }
@@ -692,6 +715,22 @@ object Commands {
             }
 
             return PrintRegionInfo(S, R as ServerRegion)
+        }
+
+        fun RemovePlayerBypass(S: CommandSourceStack, R: ServerRegion, SP: ServerPlayer): Int {
+            if (!R.BypassPlayers.remove(SP.uuid)) {
+                S.Error("This player doesn't bypass protection in this region")
+                return 0
+            }
+
+            S.Reply(R.AppendWorldAndName(Component
+                .literal("Removed player ")
+                .append(SP.Name)
+                .append(" from region ")
+            ))
+
+            S.server.ProtectionManager.Sync(S.server)
+            return 1
         }
 
         fun SetFlag(
@@ -1338,6 +1377,40 @@ object Commands {
                     }
                 )
                 .executes { RegionCommand.PrintRegionInfo(it.source, it.source.playerOrException) }
+            )
+            .then(literal("bypass")
+                .then(argument("region", RegionArgumentType.Region())
+                    .then(literal("allow")
+                        .then(argument("player", EntityArgument.player())
+                            .executes {
+                                RegionCommand.AddPlayerBypass(
+                                    it.source,
+                                    RegionArgumentType.Resolve(it, "region"),
+                                    EntityArgument.getPlayer(it, "player"),
+                                )
+                            }
+                        )
+                    )
+                    .then(literal("clear")
+                        .executes {
+                            RegionCommand.ClearBypassList(
+                                it.source,
+                                RegionArgumentType.Resolve(it, "region")
+                            )
+                        }
+                    )
+                    .then(literal("deny")
+                        .then(argument("player", EntityArgument.player())
+                            .executes {
+                                RegionCommand.RemovePlayerBypass(
+                                    it.source,
+                                    RegionArgumentType.Resolve(it, "region"),
+                                    EntityArgument.getPlayer(it, "player"),
+                                )
+                            }
+                        )
+                    )
+                )
             )
             .then(literal("flags").then(RegionFlagsNameNode))
     }

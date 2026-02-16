@@ -127,7 +127,7 @@ object ServerUtils {
         // Sync data with the client.
         val LEA = SP as LivingEntityAccessor
         Manager.SendAll(SP)
-        SP.SetClientFlag(ClientFlags.BYPASSES_REGION_PROTECTION, SP.Data.BypassesRegionProtection)
+        SP.SetClientFlag(ClientFlags.ALWAYS_BYPASSES_REGION_PROTECTION, SP.Data.AlwaysBypassesRegionProtection)
         SP.SetClientFlag(ClientFlags.IN_HYPERSHOT_CONTEXT, LEA.hypershotContext != null)
         SP.SetClientFlag(ClientFlags.VANISHED, SP.Data.Vanished)
     }
