@@ -91,19 +91,22 @@ public abstract class LeavesBlockMixin {
 
     @Inject(method = "randomTick", at = @At("TAIL"))
     private void inject$randomTick(
-        BlockState St,
-        ServerLevel W,
+        BlockState _Unused,
+        ServerLevel SL,
         BlockPos Pos,
         RandomSource R,
         CallbackInfo CI
     ) {
+        // Fetch the block state again since the random tick might have just decayed it.
+        var St = SL.getBlockState(Pos);
+
         // If this block doesn't have a corresponding budding block, give up.
         Optional<Block> BuddingBlock = getBuddingLeavesBlock(St);
         if (BuddingBlock.isEmpty()) return;
 
         // We don't want every leaves block to turn into a budding block, so
         // check how many of our neighbours are already budding blocks.
-        int Neighbours = CountBuddingNeighbors(W, Pos);
+        int Neighbours = CountBuddingNeighbors(SL, Pos);
         if (Neighbours >= R.nextIntBetweenInclusive(1, 3)) return;
 
         // Ok, turn this into a budding block but preserve the rest of the block state.
@@ -112,7 +115,7 @@ public abstract class LeavesBlockMixin {
             St
         );
 
-        W.setBlock(Pos, NewState, UPDATE_CLIENTS);
+        SL.setBlock(Pos, NewState, UPDATE_CLIENTS);
     }
 
     @Unique private int CountBuddingNeighbors(ServerLevel SW, BlockPos Pos) {

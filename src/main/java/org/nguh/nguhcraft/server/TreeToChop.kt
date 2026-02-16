@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.core.BlockPos
 import net.minecraft.world.level.Level
+import org.nguh.nguhcraft.block.NguhBlocks
 import java.util.*
 
 
@@ -78,11 +79,11 @@ class TreeToChop private constructor(private val Owner: ServerPlayer, private va
         private val LOG_TO_LEAVES: Map<Block, Array<Block>> = mapOf(
             Blocks.ACACIA_LOG to arrayOf(Blocks.ACACIA_LEAVES),
             Blocks.BIRCH_LOG to arrayOf(Blocks.BIRCH_LEAVES),
-            Blocks.CHERRY_LOG to arrayOf(Blocks.CHERRY_LEAVES),
-            Blocks.DARK_OAK_LOG to arrayOf(Blocks.DARK_OAK_LEAVES),
+            Blocks.CHERRY_LOG to arrayOf(Blocks.CHERRY_LEAVES, NguhBlocks.BUDDING_CHERRY_LEAVES),
+            Blocks.DARK_OAK_LOG to arrayOf(Blocks.DARK_OAK_LEAVES, NguhBlocks.BUDDING_DARK_OAK_LEAVES),
             Blocks.JUNGLE_LOG to arrayOf(Blocks.JUNGLE_LEAVES),
             Blocks.MANGROVE_LOG to arrayOf(Blocks.MANGROVE_LEAVES),
-            Blocks.OAK_LOG to arrayOf(Blocks.OAK_LEAVES, Blocks.AZALEA_LEAVES, Blocks.FLOWERING_AZALEA_LEAVES),
+            Blocks.OAK_LOG to arrayOf(Blocks.OAK_LEAVES, NguhBlocks.BUDDING_OAK_LEAVES, Blocks.AZALEA_LEAVES, Blocks.FLOWERING_AZALEA_LEAVES),
             Blocks.SPRUCE_LOG to arrayOf(Blocks.SPRUCE_LEAVES),
             Blocks.PALE_OAK_LOG to arrayOf(Blocks.PALE_OAK_LEAVES)
         )

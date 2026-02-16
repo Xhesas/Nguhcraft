@@ -54,8 +54,15 @@ class BuddingLeavesBlock(
         (St.getValue(AGE) < MAX_AGE || St.getValue(DISTANCE) == 7) &&
         !St.getValue(PERSISTENT)
 
-    override fun randomTick(St: BlockState, SL: ServerLevel, Pos: BlockPos, Random: RandomSource) {
-        super.randomTick(St, SL, Pos, Random)
+    override fun randomTick(InState: BlockState, SL: ServerLevel, Pos: BlockPos, Random: RandomSource) {
+        super.randomTick(InState, SL, Pos, Random)
+
+        // The random tick just now might have decayed this block; do not
+        // attempt to overwrite that.
+        val St = SL.getBlockState(Pos)
+        if (St.block !is BuddingLeavesBlock) return
+
+        // Check if this block should age.
         val Age = St.getValue(AGE)
         if (
             Age < MAX_AGE &&

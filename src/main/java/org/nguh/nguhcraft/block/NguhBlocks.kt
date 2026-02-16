@@ -712,8 +712,9 @@ object NguhBlocks {
         Blocks.OAK_LEAVES to BUDDING_OAK_LEAVES,
         Blocks.DARK_OAK_LEAVES to BUDDING_DARK_OAK_LEAVES,
         Blocks.CHERRY_LEAVES to BUDDING_CHERRY_LEAVES
-        // When adding an entry here, also update
-        // LeavesBlockMixin::IsBuddingLeavesBlock().
+        // When adding an entry here, also update:
+        //   - LeavesBlockMixin::IsBuddingLeavesBlock(),
+        //   - TreeToChop::LOG_TO_LEAVES.
     )
 
     val BUDDING_LEAVES_TO_LEAVES = buildMap {
