@@ -80,6 +80,9 @@ open class Region(
          */
         ENTITY_INTERACT,
 
+        /** Allow trees to grow fruit. */
+        FRUIT_GROWTH,
+
         /**
          * Allow entities to be affected by the environment.
          *
@@ -157,7 +160,11 @@ open class Region(
      *
      * By default, players are allowed to enter and exit a region.
      */
-    val RegionFlags = _Flags ?: SmallEnumSet(Flags.PLAYER_ENTRY, Flags.PLAYER_EXIT)
+    val RegionFlags = _Flags ?: SmallEnumSet(
+        Flags.FRUIT_GROWTH,
+        Flags.PLAYER_ENTRY,
+        Flags.PLAYER_EXIT,
+    )
 
     /** Players that bypass region protection in this region. */
     val BypassPlayers: MutableList<UUID> = _BypassPlayers.toMutableList()
@@ -207,6 +214,9 @@ open class Region(
 
     /** Check if this region allows entities to be affected by the environment. */
     fun AllowsEnvironmentalHazards() = Test(Flags.ENVIRONMENTAL_HAZARDS)
+
+    /** Check if this region allows trees to grow fruit. */
+    fun AllowsFruitGrowth() = Test(Flags.FRUIT_GROWTH)
 
     /** Check if this region allows natural spawning of hostile mobs. */
     fun AllowsHostileMobSpawning() = Test(Flags.HOSTILE_MOB_SPAWNING)

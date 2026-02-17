@@ -28,6 +28,7 @@ import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.shapes.VoxelShape
 import net.minecraft.world.level.Level
 import net.minecraft.world.level.block.CampfireBlock
+import net.minecraft.world.level.block.LeavesBlock
 import org.nguh.nguhcraft.isa
 import org.nguh.nguhcraft.item.IsLocked
 import org.nguh.nguhcraft.item.KeyItem
@@ -416,14 +417,18 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
     /** Check if random ticks are allowed. */
     private fun _PermitRandomTicks(W: Level, Pos: BlockPos): Boolean {
         val R = _FindRegionContainingBlock(W, Pos) ?: return true
+        return when (W.getBlockState(Pos).block) {
+            // Always allow ticking campfire blocks since that's required to spawn
+            // smoke particles (yes, that’s done via random ticks for some ungodly
+            // reason).
+            is CampfireBlock -> true
 
-        // Always allow ticking campfire blocks since that's required to spawn
-        // smoke particles (yes, that’s done via random ticks for some ungodly
-        // reason).
-        if (W.getBlockState(Pos).block is CampfireBlock)
-            return true
+            // For leaves, permit fruit growth if the corresponding flag is set.
+            is LeavesBlock -> R.AllowsFruitGrowth() || R.AllowsRandomTicks()
 
-        return R.AllowsRandomTicks()
+            // Everything else just checks the random ticks flag.
+            else -> R.AllowsRandomTicks()
+        }
     }
 
     /**
