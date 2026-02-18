@@ -83,6 +83,7 @@ private lateinit var Server: DedicatedServer
 @Environment(EnvType.SERVER)
 internal class Discord : ListenerAdapter() {
     override fun onButtonInteraction(E: ButtonInteractionEvent) {
+        // Do NOT check if we’re in the Agma Schwa guild here as this happens in DMs!
         if (!Ready) return
 
         // Ignore any interactions that we don’t recognise.
@@ -141,15 +142,18 @@ internal class Discord : ListenerAdapter() {
     }
 
     override fun onGuildMemberRemove(E: GuildMemberRemoveEvent) {
-        if (Ready) HandleMemberRemoved(E.user.idLong)
+        if (!Ready || !E.guild.IsAgmaSchwa) return
+        HandleMemberRemoved(E.user.idLong)
     }
 
     override fun onGuildMemberUpdate(E: GuildMemberUpdateEvent) {
+        if (!Ready || !E.guild.IsAgmaSchwa) return
         val M = E.member
         UpdateLinkedPlayer(M.idLong) { UpdatePlayer(it, M) }
     }
 
     override fun onGuildUpdateIcon(E: GuildUpdateIconEvent) {
+        if (!Ready || !E.guild.IsAgmaSchwa) return
         ServerAvatarURL = when {
             E.newIconUrl != null -> E.newIconUrl!!
             E.oldIconUrl != null -> E.oldIconUrl!!
@@ -159,7 +163,7 @@ internal class Discord : ListenerAdapter() {
 
     override fun onMessageReceived(E: MessageReceivedEvent) {
         // Prevent infinite loops and only consider messages in the designated channel.
-        if (!Ready) return
+        if (!Ready || !E.guild.IsAgmaSchwa) return
         val M = E.member ?: return
         if (
             E.isWebhookMessage ||
@@ -187,6 +191,7 @@ internal class Discord : ListenerAdapter() {
     }
 
     override fun onSlashCommandInteraction(Interaction: SlashCommandInteractionEvent) {
+        if (!Ready || !Interaction.guild.IsAgmaSchwa) return
         if (Interaction.name == "players") Server.execute {
             try {
                 val S = buildString {
@@ -545,6 +550,9 @@ internal class Discord : ListenerAdapter() {
         /** Check if a server member is allowed to link their account at all. */
         private fun IsAllowedToLink(M: Member): Boolean =
             M.roles.any { RequiredRoles.contains(it) }
+
+        /** Check if this is the Agma Schwa guild. */
+        val Guild?.IsAgmaSchwa get() = this != null && idLong == AgmaSchwaGuild.idLong
 
         /** DO NOT USE. */
         fun __IsLinkedOrOperatorImpl(SP: ServerPlayer): Boolean = SP.isLinkedOrOperator
