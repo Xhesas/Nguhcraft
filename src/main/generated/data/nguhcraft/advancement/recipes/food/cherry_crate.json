@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "nguhcraft:cherry_crate"
+        "recipes": "nguhcraft:cherry_crate"
       },
       "trigger": "minecraft:recipe_unlocked"
     }

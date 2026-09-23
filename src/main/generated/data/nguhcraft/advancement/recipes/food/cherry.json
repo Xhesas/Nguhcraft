@@ -13,7 +13,7 @@
     },
     "has_the_recipe": {
       "conditions": {
-        "recipe": "nguhcraft:cherry"
+        "recipes": "nguhcraft:cherry"
       },
       "trigger": "minecraft:recipe_unlocked"
     }
