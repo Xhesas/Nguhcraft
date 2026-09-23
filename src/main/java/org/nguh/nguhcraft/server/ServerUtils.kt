@@ -39,8 +39,10 @@ import net.minecraft.ChatFormatting
 import net.minecraft.world.InteractionHand
 import net.minecraft.world.phys.HitResult
 import net.minecraft.core.BlockPos
+import net.minecraft.sounds.SoundEvents
 import net.minecraft.world.phys.AABB
 import net.minecraft.util.Mth
+import net.minecraft.world.entity.LightningBolt
 import net.minecraft.world.phys.Vec3
 import net.minecraft.world.level.ClipContext
 import net.minecraft.world.level.portal.TeleportTransition
@@ -321,7 +323,7 @@ object ServerUtils {
     fun Obliterate(SP: ServerPlayer) {
         if (SP.isDeadOrDying || SP.isSpectator || SP.isCreative) return
         val SW = SP.level()
-        StrikeLightning(SW, SP.position(), null, true)
+        StrikeLightning(SW, SP.position(), Cosmetic = true)
         SP.hurtServer(SW, NguhDamageTypes.Obliterated(SW), Float.MAX_VALUE)
     }
 
@@ -352,18 +354,15 @@ object ServerUtils {
     /** Unconditionally strike lightning. */
     @JvmStatic
     @JvmOverloads
-    fun StrikeLightning(W: ServerLevel, Where: Vec3, TE: ThrownTrident? = null, Cosmetic: Boolean = false) {
+    fun StrikeLightning(W: ServerLevel, Where: Vec3, Cosmetic: Boolean = false): LightningBolt? {
         val Lightning = EntityTypes.LIGHTNING_BOLT.spawn(
             W,
             BlockPos.containing(Where),
             EntitySpawnReason.SPAWN_ITEM_USE
         )
 
-        if (Lightning != null) {
-            Lightning.setVisualOnly(Cosmetic)
-            Lightning.cause = TE?.owner as? ServerPlayer
-            if (TE != null) (TE as TridentEntityAccessor).`Nguhcraft$SetStruckLightning`()
-        }
+        Lightning?.setVisualOnly(Cosmetic)
+        return Lightning
     }
 
     /** Called during the world tick on the server. */

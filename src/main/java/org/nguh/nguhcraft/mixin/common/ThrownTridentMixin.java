@@ -1,7 +1,5 @@
 package org.nguh.nguhcraft.mixin.common;
 
-import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
-import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -16,6 +14,7 @@ import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.level.Level;
+import org.jspecify.annotations.NonNull;
 import org.nguh.nguhcraft.TridentUtils;
 import org.nguh.nguhcraft.accessors.TridentEntityAccessor;
 import org.spongepowered.asm.mixin.Final;
@@ -24,6 +23,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ThrownTrident.class)
@@ -63,8 +63,8 @@ public abstract class ThrownTridentMixin extends AbstractArrow implements Triden
         entityData.set(STRUCK_LIGHTNING, true);
     }
 
-    /** Whether this has dealt damage. */
-    @Override public boolean Nguhcraft$DealtDamage() { return dealtDamage; }
+    /** Whether this has struck lightning. */
+    @Override public boolean Nguhcraft$GetStruckLightning() { return entityData.get(STRUCK_LIGHTNING); }
 
     /** If this has struck lightning, render with blue fire. */
     @Override public boolean displayFireAnimation() { return entityData.get(STRUCK_LIGHTNING); }
@@ -74,28 +74,6 @@ public abstract class ThrownTridentMixin extends AbstractArrow implements Triden
     private void inject$initDataTracker(SynchedEntityData.Builder B, CallbackInfo CI) {
         B.define(STRUCK_LIGHTNING, false);
     }
-
-    /** Implement Channeling II. */
-    @WrapOperation(
-        method = "onHitEntity(Lnet/minecraft/world/phys/EntityHitResult;)V",
-        at = @At(
-            value = "INVOKE",
-            target = "Lnet/minecraft/world/entity/projectile/arrow/ThrownTrident;playSound(Lnet/minecraft/sounds/SoundEvent;FF)V",
-            ordinal = 0
-        )
-    )
-    private void inject$onEntityHit(
-        ThrownTrident Self,
-        SoundEvent SE,
-        float Volume,
-        float Pitch,
-        Operation<Void> Op,
-        EntityHitResult EHR
-    ) {
-        // This plays the hit sound itself (thunder if we strike lightning).
-        TridentUtils.ActOnEntityHit(Self, EHR);
-    }
-
 
     /** Discard copied tridents after 5 seconds. */
     @Inject(
@@ -143,9 +121,35 @@ public abstract class ThrownTridentMixin extends AbstractArrow implements Triden
         if (Copy) WV.putBoolean(COPY_KEY, true);
     }
 
-    /** Implement Channeling II. */
+    /** Implement Channelling I and II. */
+    @Inject(method = "onHitEntity", at = @At("TAIL"))
+    private void inject$onEntityHit$1(EntityHitResult EHR, CallbackInfo CI) {
+        TridentUtils.ActOnEntityHit((ThrownTrident)(Object)this, EHR);
+    }
+
+    /**
+     * Disable the sound effect played when a trident hits an entity.
+     * <p>
+     * We instead emit the appropriate sound effect in ActOnEntityHit() above.
+     */
+    @Redirect(
+        method = "onHitEntity",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/entity/projectile/arrow/ThrownTrident;playSound(Lnet/minecraft/sounds/SoundEvent;FF)V"
+        )
+    )
+    private void inject$onEntityHit$2(ThrownTrident This, SoundEvent SE, float Volume, float Pitch) {}
+
+    /** Implement Channelling I and II. */
     @Override
-    protected void onHitBlock(BlockHitResult BHR) {
-        TridentUtils.ActOnBlockHit((ThrownTrident) (Object) this, BHR);
+    protected void onHitBlock(@NonNull BlockHitResult BHR) {
+        // Calling this is fine; we have disabled the normal Channelling behaviour
+        // by overwriting 'channeling.json', so this will do everything a projectile
+        // is supposed to do except trigger channelling.
+        super.onHitBlock(BHR);
+
+        // This handles Channelling I and II.
+        TridentUtils.ActOnBlockHit((ThrownTrident)(Object)this, BHR);
     }
 }

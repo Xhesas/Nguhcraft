@@ -1493,7 +1493,7 @@ object Commands {
             .requires { it.isPlayer }
             .executes {
                 val Pos = BlockPosArgument.getBlockPos(it, "where")
-                StrikeLightning(it.source.level as ServerLevel, Vec3.atBottomCenterOf(Pos))
+                StrikeLightning(it.source.level, Vec3.atBottomCenterOf(Pos))
                 it.source.sendSystemMessage(Component.literal("[$Pos] has been smitten").withStyle(ChatFormatting.YELLOW))
                 1
             }
