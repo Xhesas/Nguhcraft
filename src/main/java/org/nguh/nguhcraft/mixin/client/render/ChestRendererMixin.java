@@ -43,7 +43,12 @@ public abstract class ChestRendererMixin {
         if (BE instanceof ChestBlockEntity CBE) {
             var CV = ((ChestBlockEntityAccessor) CBE).Nguhcraft$GetChestVariant();
             var Locked = KeyItem.IsChestLocked(BE);
-            if (CV != null || Locked) Override = ChestTextureOverride.GetTexture(CV, State.type, Locked);
+            if (CV != null || Locked) Override = ChestTextureOverride.GetTexture(
+                BE.getBlockState().getBlock(),
+                CV,
+                State.type,
+                Locked
+            );
         }
 
         ((ChestRenderStateAccessor) State).Nguhcraft$SetOverrideSprite(Override);

@@ -16,6 +16,7 @@ import net.minecraft.client.data.models.model.*
 import net.minecraft.client.data.models.model.ModelLocationUtils.getModelLocation
 import net.minecraft.client.data.models.model.TextureSlot.ALL
 import net.minecraft.client.multiplayer.ClientLevel
+import net.minecraft.client.renderer.MultiblockChestResources
 import net.minecraft.client.renderer.Sheets
 import net.minecraft.client.renderer.item.properties.select.SelectItemModelProperty
 import net.minecraft.client.renderer.special.ChestSpecialRenderer
@@ -30,8 +31,10 @@ import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.level.block.Block
 import net.minecraft.world.level.block.Blocks
+import net.minecraft.world.level.block.CopperChestBlock
 import net.minecraft.world.level.block.CropBlock
 import net.minecraft.world.level.block.HorizontalDirectionalBlock
+import net.minecraft.world.level.block.WeatheringCopperCollection
 import net.minecraft.world.level.block.state.properties.*
 import org.nguh.nguhcraft.Nguhcraft.Companion.Id
 import java.util.*
@@ -73,40 +76,37 @@ class ChestTextureOverride(
     }
 
     companion object {
-        internal val Normal = OverrideVanillaModel(
-            Single = Sheets.CHEST_REGULAR.single,
-            Left = Sheets.CHEST_REGULAR.left,
-            Right = Sheets.CHEST_REGULAR.right,
-            Key = "chest"
+        internal val Normal = OverrideVanillaModel(Sheets.CHEST_REGULAR, "chest")
+        internal val Copper = WeatheringCopperCollection.ByState(
+            /*unaffected=*/OverrideVanillaModel(Sheets.CHEST_COPPER.unaffected, "copper"),
+            /*exposed=*/OverrideVanillaModel(Sheets.CHEST_COPPER.exposed, "copper_exposed"),
+            /*weathered=*/OverrideVanillaModel(Sheets.CHEST_COPPER.weathered, "copper_weathered"),
+            /*oxidized=*/OverrideVanillaModel(Sheets.CHEST_COPPER.oxidized, "copper_oxidized"),
         )
-
 
         @Environment(EnvType.CLIENT)
         private val OVERRIDES = mapOf(
-            ChestVariant.CHRISTMAS to OverrideVanillaModel(
-                Single = Sheets.CHEST_CHRISTMAS.single,
-                Left = Sheets.CHEST_CHRISTMAS.left,
-                Right = Sheets.CHEST_CHRISTMAS.right,
-                Key = "christmas"
-            ),
-
+            ChestVariant.CHRISTMAS to OverrideVanillaModel(Sheets.CHEST_CHRISTMAS, "christmas"),
             ChestVariant.PALE_OAK to ChestTextureOverride("pale_oak")
         )
 
         @Environment(EnvType.CLIENT)
         @JvmStatic
-        fun GetTexture(CV: ChestVariant?, CT: ChestType, Locked: Boolean) =
-            (CV?.let { OVERRIDES[CV] } ?: Normal).get(CT, Locked)
+        fun GetTexture(ChestBlock: Block, CV: ChestVariant?, CT: ChestType, Locked: Boolean): SpriteId {
+            val Override = when (ChestBlock) {
+                is CopperChestBlock -> Copper.pick(ChestBlock.state)
+                else -> (CV?.let { OVERRIDES[CV] } ?: Normal)
+            }
+            return Override.get(CT, Locked)
+        }
 
         internal fun OverrideVanillaModel(
-            Single: SpriteId,
-            Left: SpriteId,
-            Right: SpriteId,
+            Vanilla: MultiblockChestResources<SpriteId>,
             Key: String,
         ) = ChestTextureOverride(
-            Single = LockedChestVariant(MakeSprite("${Key}_locked"), Single),
-            Left = LockedChestVariant(MakeSprite("${Key}_left_locked"), Left),
-            Right = LockedChestVariant(MakeSprite("${Key}_right_locked"), Right)
+            Single = LockedChestVariant(MakeSprite("${Key}_locked"), Vanilla.single),
+            Left = LockedChestVariant(MakeSprite("${Key}_left_locked"), Vanilla.left),
+            Right = LockedChestVariant(MakeSprite("${Key}_right_locked"), Vanilla.right),
         )
     }
 }
