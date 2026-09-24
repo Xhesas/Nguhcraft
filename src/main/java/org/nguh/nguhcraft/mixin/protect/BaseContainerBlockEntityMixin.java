@@ -19,6 +19,7 @@ import net.minecraft.world.level.storage.ValueInput;
 import net.minecraft.world.level.storage.ValueOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.nguh.nguhcraft.item.KeyItem;
@@ -77,6 +78,15 @@ public abstract class BaseContainerBlockEntityMixin extends BlockEntity implemen
     public boolean isLocked() {
         throw new IllegalStateException("BaseContainerBlockEntity::isLocked() should never be called");
     }
+
+    /**
+     * We send the 'container is locked' message in 'canOpen()', so
+     * this doesn’t need to do anything. It is only ever called after
+     * 'canOpen()', and it would overwrite our custom message if we left
+     * it in place.
+     */
+    @Overwrite
+    public static void sendChestLockedNotifications(Vec3 Pos, Player PE, Component Name) {}
 
     @Inject(method = "loadAdditional", at = @At("TAIL"))
     void inject$readData(ValueInput RV, CallbackInfo CI) {
