@@ -24,6 +24,7 @@ import net.minecraft.tags.DamageTypeTags
 import net.minecraft.server.MinecraftServer
 import net.minecraft.world.InteractionResult
 import net.minecraft.core.BlockPos
+import net.minecraft.world.entity.decoration.Cushion
 import net.minecraft.world.phys.AABB
 import net.minecraft.world.phys.shapes.VoxelShape
 import net.minecraft.world.level.Level
@@ -144,6 +145,7 @@ abstract class ProtectionManager(protected val Regions: RegionLists) : Manager()
             is LeashFenceKnotEntity -> R.AllowsLeashing()
             is Villager -> R.AllowsVillagerTrading()
             is Leashable if (PE.mainHandItem isa Items.LEAD) -> R.AllowsLeashing()
+            is Cushion -> true // Always allow sitting on cushions.
             else -> R.AllowsEntityInteraction()
         }
     }
