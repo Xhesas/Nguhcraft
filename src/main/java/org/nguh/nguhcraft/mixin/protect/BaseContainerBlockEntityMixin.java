@@ -23,12 +23,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.nguh.nguhcraft.item.KeyItem;
 import org.nguh.nguhcraft.item.LockableBlockEntity;
+import org.nguh.nguhcraft.protect.ProtectionManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import static org.nguh.nguhcraft.item.LockableBlockEntityKt.CheckCanOpen;
@@ -61,6 +63,21 @@ public abstract class BaseContainerBlockEntityMixin extends BlockEntity implemen
         return CheckCanOpen(this, PE, PE.getMainHandItem());
     }
 
+    /**
+     * We replace all users of this, so it should never be called.
+     * <p>
+     * Currently, this is used by:
+     * - TransportItemsBetweenContainers::isContainerLocked
+     * - BaseContainerBlockEntity::collectImplicitComponents
+     *
+     * @author Sirraide
+     * @reason See above.
+     */
+    @Overwrite
+    public boolean isLocked() {
+        throw new IllegalStateException("BaseContainerBlockEntity::isLocked() should never be called");
+    }
+
     @Inject(method = "loadAdditional", at = @At("TAIL"))
     void inject$readData(ValueInput RV, CallbackInfo CI) {
         NguhcraftLock = DeserialiseLock(RV, TAG_NGUHCRAFT_LOCK);
@@ -86,6 +103,16 @@ public abstract class BaseContainerBlockEntityMixin extends BlockEntity implemen
     void inject$removeFromCopiedStackData(ValueOutput WV, CallbackInfo CI) {
         WV.discard(TAG_NGUHCRAFT_LOCK);
     }
+
+    /** Redirect isLocked() to return 'false' to prevent the vanilla lock from being saved. */
+    @Redirect(
+        method = "collectImplicitComponents",
+        at = @At(
+            value = "INVOKE",
+            target = "Lnet/minecraft/world/level/block/entity/BaseContainerBlockEntity;isLocked()Z"
+        )
+    )
+    private boolean inject$collectImplicitComponents(BaseContainerBlockEntity This) { return false; }
 
     /** Send lock in initial chunk data. */
     @Override
