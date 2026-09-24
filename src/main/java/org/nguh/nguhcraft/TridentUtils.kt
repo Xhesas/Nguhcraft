@@ -9,6 +9,7 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.sounds.SoundEvents
 import net.minecraft.tags.BlockTags
+import net.minecraft.world.entity.LivingEntity
 import net.minecraft.world.entity.projectile.arrow.ThrownTrident
 import net.minecraft.world.phys.BlockHitResult
 import net.minecraft.world.phys.EntityHitResult
@@ -88,7 +89,7 @@ object TridentUtils {
             // Reset this to make multishot tridents work; otherwise, once multiple
             // tridents hit an entity in quick succession, only one of them would
             // deal damage, which would make multishot tridents a bit pointless.
-            EHR.entity.invulnerableTime = 0
+            (EHR.entity as? LivingEntity)?.damageCooldownTime = 0
             return
         }
 
