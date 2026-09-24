@@ -6,11 +6,13 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry
 import net.minecraft.core.Registry
+import net.minecraft.core.registries.Registries
 import net.minecraft.nbt.NbtAccounter
 import net.minecraft.nbt.NbtIo
 import net.minecraft.resources.ResourceKey
 import net.minecraft.resources.Identifier
 import net.minecraft.server.MinecraftServer
+import net.minecraft.tags.BlockTags
 import net.minecraft.util.ProblemReporter
 import net.minecraft.world.level.storage.LevelResource
 import net.minecraft.world.level.storage.TagValueInput
@@ -21,6 +23,7 @@ import org.nguh.nguhcraft.network.*
 import org.nguh.nguhcraft.server.Manager
 import org.nguh.nguhcraft.server.ServerNetworkHandler
 import org.nguh.nguhcraft.server.ServerUtils
+import org.nguh.nguhcraft.server.TreeToChop
 import org.nguh.nguhcraft.server.command.Commands
 import java.nio.file.Path
 import kotlin.io.path.inputStream
@@ -48,7 +51,11 @@ class Nguhcraft : ModInitializer {
         NguhSounds.Init()
         ServerNetworkHandler.Init()
 
-        ServerLifecycleEvents.SERVER_STARTED.register { LoadServerState(it) }
+        ServerLifecycleEvents.SERVER_STARTED.register {
+            CheckLogs(it)
+            LoadServerState(it)
+        }
+
         ServerTickEvents.START_LEVEL_TICK.register { ServerUtils.TickWorld(it) }
         ServerLifecycleEvents.BEFORE_SAVE.register { it, _, _ -> SaveServerState(it) }
         ServerLifecycleEvents.SERVER_STOPPED.register { if (LoadedServer === it) LoadedServer = null }
@@ -61,6 +68,18 @@ class Nguhcraft : ModInitializer {
         @Volatile private var LoadedServer: MinecraftServer? = null
 
         @JvmStatic fun<T : Any> RKey(Registry: ResourceKey<Registry<T>>, S: String): ResourceKey<T> = ResourceKey.create(Registry, Id(S))
+
+        fun CheckLogs(S: MinecraftServer) {
+            // Check that for every naturally generating tree, we must have an
+            // entry in the tree chopping code.
+            val Logs = S.registryAccess().getOrThrow(BlockTags.OVERWORLD_NATURAL_LOGS).size()
+            val Chop = TreeToChop.LOG_TO_LEAVES.size
+            if (Logs != Chop) throw IllegalStateException(
+                "Mismatch between number of natural logs ($Logs) and logs registered in the " +
+                "tree chopper ($Chop). Please update 'LOG_TO_LEAVES' and 'WOOD_TYPES' in " +
+                "'org.nguh.nguhcraft.server.TreeToChop' and add any new trees there."
+            )
+        }
 
         private fun LoadServerState(S: MinecraftServer) {
             LOGGER.info("[SETUP] Setting up server state")
